@@ -1,0 +1,35 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Danisan {
+  id               Int      @id @default(autoincrement())
+  name             String
+  height           Float?   // Boy (cm) - YENİ ALAN
+  targetCalories   Int
+  protein          Int
+  carbs            Int
+  fat              Int
+  allergens        Json?
+  currentWeight    Float
+  targetWeight     Float
+  startWeight      Float
+  weeklyProgress   Json?    // [{week: 1, weight: 75.5, date: "2025-01-01"}]
+  adherence        Int
+  mealsLogged      Int
+  totalMeals       Int
+  aiUsageCount     Int      @default(0)
+  weeklyMenu       Json?    @default("{}")
+  pendingApprovals Json?    // <-- EKSİK OLAN BU SATIRI EKLE
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+ 

@@ -1,10 +1,24 @@
-// src/pages/dietitian/ClientsList.jsx - TAMAMEN DÜZELTILMIŞ
+// src/pages/dietitian/ClientsList.jsx - Renk Paleti Uygulanmış Hali
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../../context/ClientContext';
 import { ChefHat, Activity, PlusCircle, TrendingUp, TrendingDown, Search, Filter } from 'lucide-react';
 import AddClientModal from '../../components/AddClientModal.jsx';
+
+// tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
+// Recharts gibi kütüphanelerde doğrudan kullanabilmek için (veya diğer inline stiller için)
+const COLORS = {
+  primary: '#cbf078',
+  secondary: '#f8f398',
+  tertiary: '#f1b963',
+  error: '#e46161',
+  'text-dark': '#333333',
+  'text-medium': '#666666',
+  'background-light': '#f8f8f8',
+  'background-white': '#ffffff',
+  divider: '#e0e0e0',
+};
 
 // BMI Hesaplama ve Kategori Belirleme
 const calculateBMI = (weight, height) => {
@@ -16,24 +30,24 @@ const calculateBMI = (weight, height) => {
 const getBMICategory = (bmi) => {
   if (!bmi) return { label: 'Bilinmiyor', color: 'gray' };
   
-  if (bmi < 18.5) return { label: 'Zayıf', color: 'blue' };
-  if (bmi < 25) return { label: 'Normal', color: 'green' };
-  if (bmi < 30) return { label: 'Fazla Kilolu', color: 'yellow' };
-  if (bmi < 35) return { label: 'Obez (1. Derece)', color: 'orange' };
-  if (bmi < 40) return { label: 'Obez (2. Derece)', color: 'red' };
-  return { label: 'Morbid Obez', color: 'red' };
+  if (bmi < 18.5) return { label: 'Zayıf', color: 'secondary' }; // Sarı
+  if (bmi < 25) return { label: 'Normal', color: 'primary' }; // Yeşil
+  if (bmi < 30) return { label: 'Fazla Kilolu', color: 'tertiary' }; // Turuncu
+  if (bmi < 35) return { label: 'Obez (1. Derece)', color: 'error' }; // Kırmızı
+  if (bmi < 40) return { label: 'Obez (2. Derece)', color: 'error' }; // Kırmızı
+  return { label: 'Morbid Obez', color: 'error' }; // Kırmızı
 };
 
-const getBadgeColor = (color) => {
-  const colors = {
-    blue: 'bg-blue-100 text-blue-700 border-blue-200',
-    green: 'bg-green-100 text-green-700 border-green-200',
-    yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    orange: 'bg-orange-100 text-orange-700 border-orange-200',
-    red: 'bg-red-100 text-red-700 border-red-200',
-    gray: 'bg-gray-100 text-gray-600 border-gray-200',
-  };
-  return colors[color] || colors.gray;
+// Renk paletimize göre badge renklerini döndür
+const getBadgeColor = (colorName) => {
+  switch (colorName) {
+    case 'primary': return 'bg-primary/20 text-primary border-primary/30';
+    case 'secondary': return 'bg-secondary/20 text-secondary border-secondary/30';
+    case 'tertiary': return 'bg-tertiary/20 text-tertiary border-tertiary/30';
+    case 'error': return 'bg-error/20 text-error border-error/30';
+    case 'gray': return 'bg-background-light text-text-medium border-divider';
+    default: return 'bg-background-light text-text-medium border-divider';
+  }
 };
 
 // Kilo değişimi hesaplama
@@ -84,10 +98,10 @@ function ClientsList() {
   // ✅ Yükleniyor ve hata durumları
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+      <div className="bg-background-white rounded-xl shadow-sm border border-divider p-12 text-center">
         <div className="inline-block">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 font-medium">Danışanlar yükleniyor...</p>
+          <div className="w-12 h-12 border-4 border-tertiary/50 border-t-tertiary rounded-full animate-spin mb-4"></div> {/* Spinner rengi */}
+          <p className="text-text-medium font-medium">Danışanlar yükleniyor...</p>
         </div>
       </div>
     );
@@ -95,10 +109,10 @@ function ClientsList() {
 
   if (error) {
     return (
-      <div className="bg-red-50 rounded-xl shadow-sm border-2 border-red-200 p-6">
-        <h3 className="text-lg font-bold text-red-800 mb-2">⚠️ Hata</h3>
-        <p className="text-red-700">{error}</p>
-        <p className="text-sm text-red-600 mt-3">Backend sunucusunun (port 3001) çalıştığından emin olun.</p>
+      <div className="bg-error/10 rounded-xl shadow-sm border-2 border-error/50 p-6">
+        <h3 className="text-lg font-bold text-error mb-2">⚠️ Hata</h3>
+        <p className="text-error/90">{error}</p>
+        <p className="text-sm text-error/80 mt-3">Backend sunucusunun (port 3001) çalıştığından emin olun.</p>
       </div>
     );
   }
@@ -112,19 +126,19 @@ function ClientsList() {
         />
       )}
       
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-background-white rounded-xl shadow-sm border border-divider p-6">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
-              <h3 className="text-2xl font-bold text-gray-800">Danışan Listesi</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Toplam: <span className="font-semibold text-blue-600">{clients.length}</span> danışan
+              <h3 className="text-2xl font-bold text-text-dark">Danışan Listesi</h3>
+              <p className="text-sm text-text-medium mt-1">
+                Toplam: <span className="font-semibold text-primary">{clients.length}</span> danışan
               </p>
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold transition-all shadow-md hover:shadow-lg"
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-text-dark rounded-lg hover:bg-primary/90 font-semibold transition-all shadow-md hover:shadow-lg"
             >
               <PlusCircle size={20} />
               Yeni Danışan Ekle
@@ -134,21 +148,21 @@ function ClientsList() {
           {/* Arama ve Filtre */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-medium/70" size={20} />
               <input
                 type="text"
                 placeholder="Danışan ara (ad, soyad)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-divider rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-text-dark bg-background-white"
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all ${
                 showFilters 
-                  ? 'bg-blue-50 border-blue-300 text-blue-600' 
-                  : 'border-gray-300 hover:bg-gray-50'
+                  ? 'bg-secondary/10 border-secondary/50 text-secondary' // Aktif filtre: Sarımsı
+                  : 'border-divider hover:bg-background-light' // Pasif filtre: Nötr
               }`}
             >
               <Filter size={18} />
@@ -158,17 +172,17 @@ function ClientsList() {
 
           {/* Filtre Seçenekleri */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-secondary/5 rounded-lg border-2 border-divider"> {/* Filtre arka planı */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">📊 BMI Kategorisi</label>
+                <label className="block text-sm font-semibold text-text-dark mb-2">📊 BMI Kategorisi</label>
                 <select
                   value={filterBMI}
                   onChange={(e) => setFilterBMI(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  className="w-full p-2 border border-divider rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background-white text-text-dark"
                 >
                   <option value="all">Tümü</option>
                   <option value="Zayıf">Zayıf</option>
-                  <option value="Normal">Normal Ağırlık</option>
+                  <option value="Normal Ağırlık">Normal Ağırlık</option>
                   <option value="Fazla Kilolu">Fazla Kilolu</option>
                   <option value="Obez (1. Derece)">Obez (1. Derece)</option>
                   <option value="Obez (2. Derece)">Obez (2. Derece)</option>
@@ -176,11 +190,11 @@ function ClientsList() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">📈 Uyum Durumu</label>
+                <label className="block text-sm font-semibold text-text-dark mb-2">📈 Uyum Durumu</label>
                 <select
                   value={filterAdherence}
                   onChange={(e) => setFilterAdherence(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  className="w-full p-2 border border-divider rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background-white text-text-dark"
                 >
                   <option value="all">Tümü</option>
                   <option value="high">Yüksek (≥80%)</option>
@@ -194,19 +208,19 @@ function ClientsList() {
           {/* Aktif Filtreler */}
           {(searchTerm || filterBMI !== 'all' || filterAdherence !== 'all') && (
             <div className="flex flex-wrap gap-2 items-center text-sm">
-              <span className="text-gray-600">Aktif Filtreler:</span>
+              <span className="text-text-medium">Aktif Filtreler:</span>
               {searchTerm && (
-                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                <span className="bg-tertiary/20 text-tertiary px-2 py-1 rounded-full text-xs font-medium"> {/* Turuncu */}
                   Arama: {searchTerm}
                 </span>
               )}
               {filterBMI !== 'all' && (
-                <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                <span className="bg-secondary/20 text-secondary px-2 py-1 rounded-full text-xs font-medium"> {/* Sarı */}
                   BMI: {filterBMI}
                 </span>
               )}
               {filterAdherence !== 'all' && (
-                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-xs font-medium"> {/* Yeşil */}
                   Uyum: {filterAdherence === 'high' ? 'Yüksek' : filterAdherence === 'medium' ? 'Orta' : 'Düşük'}
                 </span>
               )}
@@ -217,18 +231,18 @@ function ClientsList() {
         {/* Danışan Listesi */}
         <div className="space-y-3">
           {filteredClients.length === 0 ? (
-            <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+            <div className="text-center py-16 text-text-medium border-2 border-dashed border-divider rounded-lg">
               {clients.length === 0 ? (
                 <>
-                  <div className="text-5xl mb-4">👥</div>
-                  <p className="font-semibold text-lg text-gray-700">Henüz kayıtlı bir danışanınız yok.</p>
-                  <p className="mt-2 text-gray-600">Başlamak için yukarıdaki "Yeni Danışan Ekle" butonuna tıklayın.</p>
+                  <div className="text-5xl mb-4 text-text-medium">👥</div>
+                  <p className="font-semibold text-lg text-text-dark">Henüz kayıtlı bir danışanınız yok.</p>
+                  <p className="mt-2 text-text-medium">Başlamak için yukarıdaki "Yeni Danışan Ekle" butonuna tıklayın.</p>
                 </>
               ) : (
                 <>
-                  <div className="text-5xl mb-4">🔍</div>
-                  <p className="font-semibold text-lg text-gray-700">Filtrelere uygun danışan bulunamadı.</p>
-                  <p className="mt-2 text-gray-600">Filtreleri değiştirerek tekrar deneyin.</p>
+                  <div className="text-5xl mb-4 text-text-medium">🔍</div>
+                  <p className="font-semibold text-lg text-text-dark">Filtrelere uygun danışan bulunamadı.</p>
+                  <p className="mt-2 text-text-medium">Filtreleri değiştirerek tekrar deneyin.</p>
                 </>
               )}
             </div>
@@ -244,19 +258,19 @@ function ClientsList() {
                   <div
                     key={clientItem.id}
                     onClick={() => navigate(`/dietitian/clients/${clientItem.id}/menu`)}
-                    className="border border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-lg hover:bg-blue-50 transition-all cursor-pointer group"
+                    className="border border-divider rounded-xl p-5 hover:border-primary hover:shadow-lg hover:bg-primary/5 transition-all cursor-pointer group"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 flex items-start gap-4">
                         {/* Avatar */}
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-md">
+                        <div className="w-14 h-14 rounded-full bg-tertiary flex items-center justify-center text-background-white font-bold text-xl flex-shrink-0 shadow-md"> {/* Avatar rengi */}
                           {clientItem.name.charAt(0).toUpperCase()}
                         </div>
                         
                         <div className="flex-1">
                           {/* Ad ve Badge'ler */}
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h4 className="font-semibold text-lg text-gray-800">{clientItem.name}</h4>
+                            <h4 className="font-semibold text-lg text-text-dark">{clientItem.name}</h4>
                             
                             {/* BMI Badge */}
                             <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getBadgeColor(bmiCategory.color)}`}>
@@ -265,14 +279,14 @@ function ClientsList() {
                             
                             {/* BMI Değeri */}
                             {bmi && (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              <span className="text-xs text-text-medium bg-background-light px-2 py-1 rounded">
                                 BMI: {bmi}
                               </span>
                             )}
 
                             {/* Onay Bekleyen Badge */}
                             {pendingCount > 0 && (
-                              <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold animate-pulse">
+                              <span className="px-2 py-1 bg-error/20 text-error rounded-full text-xs font-bold animate-pulse">
                                 ⏳ {pendingCount} Onay Bekliyor
                               </span>
                             )}
@@ -282,16 +296,16 @@ function ClientsList() {
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
                             {/* Uyum Oranı */}
                             <div className="flex items-center gap-1">
-                              <Activity size={14} className="text-green-500" />
-                              <span className="text-gray-700">
-                                <span className="font-bold text-green-600">{clientItem.adherence}%</span> uyum
+                              <Activity size={14} className="text-primary" /> {/* Primary ikon */}
+                              <span className="text-text-dark">
+                                <span className="font-bold text-primary">{clientItem.adherence}%</span> uyum
                               </span>
                             </div>
 
                             {/* Öğün Kaydı */}
                             <div className="flex items-center gap-1">
-                              <ChefHat size={14} className="text-blue-500" />
-                              <span className="text-gray-700">
+                              <ChefHat size={14} className="text-tertiary" /> {/* Tertiary ikon */}
+                              <span className="text-text-dark">
                                 <span className="font-bold">{clientItem.mealsLogged}</span>/{clientItem.totalMeals} öğün
                               </span>
                             </div>
@@ -299,8 +313,8 @@ function ClientsList() {
                             {/* Mevcut Kilo */}
                             {clientItem.currentWeight && (
                               <div className="flex items-center gap-1">
-                                <span>⚖️</span>
-                                <span className="text-gray-700">
+                                <span className="text-text-medium">⚖️</span>
+                                <span className="text-text-dark">
                                   <span className="font-bold">{clientItem.currentWeight}</span> kg
                                 </span>
                               </div>
@@ -309,7 +323,7 @@ function ClientsList() {
                             {/* Kilo Değişimi */}
                             {weightChange && (
                               <div className={`flex items-center gap-1 font-medium ${
-                                parseFloat(weightChange) < 0 ? 'text-green-600' : 'text-orange-600'
+                                parseFloat(weightChange) < 0 ? 'text-primary' : 'text-error' // Kilo kaybı: Yeşil, kilo alımı: Kırmızı
                               }`}>
                                 {parseFloat(weightChange) < 0 ? (
                                   <>
@@ -327,7 +341,7 @@ function ClientsList() {
                           </div>
 
                           {/* Ek Bilgi */}
-                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-2 mt-2 text-xs text-text-medium">
                             {clientItem.height && (
                               <>
                                 <span>📏 {clientItem.height} cm</span>
@@ -342,7 +356,7 @@ function ClientsList() {
                       </div>
                       
                       {/* Detaylar Butonu */}
-                      <button className="hidden sm:inline-block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-5 py-2 rounded-lg font-medium shadow-sm group-hover:shadow-md transition-all whitespace-nowrap">
+                      <button className="hidden sm:inline-block bg-primary text-text-dark px-5 py-2 rounded-lg font-medium shadow-sm group-hover:shadow-md transition-all whitespace-nowrap hover:bg-primary/90">
                         Detaylar →
                       </button>
                     </div>
@@ -355,28 +369,28 @@ function ClientsList() {
 
         {/* Sayfa Altı İstatistikleri */}
         {clients.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-200 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
-              <div className="text-2xl font-bold text-blue-600">{clients.length}</div>
-              <div className="text-xs text-gray-600 mt-1">Toplam Danışan</div>
+          <div className="mt-8 pt-6 border-t border-divider grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-tertiary/10 rounded-lg p-4 text-center border border-tertiary/30">
+              <div className="text-2xl font-bold text-tertiary">{clients.length}</div>
+              <div className="text-xs text-text-medium mt-1">Toplam Danışan</div>
             </div>
-            <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200">
-              <div className="text-2xl font-bold text-green-600">
+            <div className="bg-primary/10 rounded-lg p-4 text-center border border-primary/30">
+              <div className="text-2xl font-bold text-primary">
                 {Math.round(clients.reduce((sum, c) => sum + c.adherence, 0) / clients.length)}%
               </div>
-              <div className="text-xs text-gray-600 mt-1">Ort. Uyum Oranı</div>
+              <div className="text-xs text-text-medium mt-1">Ort. Uyum Oranı</div>
             </div>
-            <div className="bg-purple-50 rounded-lg p-4 text-center border border-purple-200">
-              <div className="text-2xl font-bold text-purple-600">
-                {clients.reduce((sum, c) => sum + c.aiUsageCount, 0)}
+            <div className="bg-secondary/10 rounded-lg p-4 text-center border border-secondary/30">
+              <div className="text-2xl font-bold text-secondary">
+                {clients.reduce((sum, c) => sum + (c.aiUsageCount || 0), 0)}
               </div>
-              <div className="text-xs text-gray-600 mt-1">AI Kullanımı</div>
+              <div className="text-xs text-text-medium mt-1">AI Kullanımı</div>
             </div>
-            <div className="bg-orange-50 rounded-lg p-4 text-center border border-orange-200">
-              <div className="text-2xl font-bold text-orange-600">
+            <div className="bg-error/10 rounded-lg p-4 text-center border border-error/30">
+              <div className="text-2xl font-bold text-error">
                 {clients.reduce((sum, c) => sum + (c.pendingApprovals?.length || 0), 0)}
               </div>
-              <div className="text-xs text-gray-600 mt-1">Onay Bekleyen</div>
+              <div className="text-xs text-text-medium mt-1">Onay Bekleyen</div>
             </div>
           </div>
         )}

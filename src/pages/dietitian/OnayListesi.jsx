@@ -1,9 +1,22 @@
-// src/pages/dietitian/OnayListesi.jsx - ÇOK GÜZEL GÖRÜNÜM
+// src/pages/dietitian/OnayListesi.jsx - Renk Paleti Uygulanmış Hali
 
 import React from 'react';
 import { useClients } from '../../context/ClientContext';
 import { Check, X, Calendar, Clock, AlertCircle, ChefHat } from 'lucide-react';
 import { DAY_NAMES } from '../../data/weeklyMenuTemplate';
+
+// tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
+const COLORS = {
+  primary: '#cbf078',
+  secondary: '#f8f398',
+  tertiary: '#f1b963',
+  error: '#e46161',
+  'text-dark': '#333333',
+  'text-medium': '#666666',
+  'background-light': '#f8f8f8',
+  'background-white': '#ffffff',
+  divider: '#e0e0e0',
+};
 
 function OnayListesi() {
   const { clients, handleApproval } = useClients();
@@ -14,12 +27,12 @@ function OnayListesi() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg mb-6">
+      <div className="bg-gradient-to-r from-tertiary to-error rounded-2xl p-6 text-background-white shadow-lg mb-6"> {/* Turuncu-Kırmızı gradyan */}
         <div className="flex items-center gap-3 mb-2">
           <AlertCircle size={32} />
           <div>
             <h3 className="text-3xl font-bold">Onay Bekleyen Talepler</h3>
-            <p className="text-orange-100 mt-1">
+            <p className="text-tertiary/20 mt-1"> {/* Açık turuncu metin */}
               Danışanların AI önerilerini buradan yönetin.
             </p>
           </div>
@@ -29,16 +42,16 @@ function OnayListesi() {
       {clientsWithPending.length > 0 ? (
         <div className="space-y-8">
           {clientsWithPending.map(client => (
-            <div key={client.id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div key={client.id} className="bg-background-white rounded-2xl shadow-md border border-divider overflow-hidden">
               {/* Danışan Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+              <div className="bg-gradient-to-r from-background-light to-divider px-6 py-4 border-b border-divider"> {/* Hafif gri gradyan */}
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  <div className="w-12 h-12 rounded-full bg-tertiary flex items-center justify-center text-background-white font-bold text-lg shadow-md"> {/* Avatar rengi */}
                     {client.name.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-bold text-xl text-gray-800">{client.name}</h4>
-                    <p className="text-sm text-gray-600">
+                    <h4 className="font-bold text-xl text-text-dark">{client.name}</h4>
+                    <p className="text-sm text-text-medium">
                       {client.pendingApprovals.length} talep bekleniyor
                     </p>
                   </div>
@@ -50,20 +63,20 @@ function OnayListesi() {
                 {client.pendingApprovals.map((approval, index) => (
                   <div 
                     key={approval.id} 
-                    className="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200 shadow-sm hover:shadow-md transition-all"
+                    className="bg-secondary/10 rounded-2xl p-6 border-2 border-secondary/50 shadow-sm hover:shadow-md transition-all" // Açık sarımsı arka plan
                   >
                     {/* Üst Bilgi */}
                     <div className="flex items-center justify-between mb-5">
                       <div className="flex items-center gap-3">
-                        <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        <div className="bg-tertiary text-background-white px-3 py-1 rounded-full text-xs font-bold"> {/* Numara etiketi */}
                           #{index + 1}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <Calendar size={16} className="text-blue-500" />
+                        <div className="flex items-center gap-2 text-sm text-text-dark">
+                          <Calendar size={16} className="text-secondary" /> {/* İkon rengi */}
                           <span className="font-medium">{DAY_NAMES[approval.day] || approval.day}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock size={16} className="text-gray-400" />
+                        <div className="flex items-center gap-2 text-sm text-text-medium">
+                          <Clock size={16} className="text-divider" /> {/* İkon rengi */}
                           <span>{new Date(approval.timestamp).toLocaleDateString('tr-TR', { 
                             day: 'numeric', 
                             month: 'long', 
@@ -72,7 +85,7 @@ function OnayListesi() {
                           })}</span>
                         </div>
                       </div>
-                      <div className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">
+                      <div className="bg-tertiary/20 text-tertiary px-3 py-1 rounded-full text-xs font-bold"> {/* Öğün tipi etiketi */}
                         {approval.originalMeal?.mealType || 'Öğün'}
                       </div>
                     </div>
@@ -82,25 +95,25 @@ function OnayListesi() {
                       {/* Orijinal */}
                       <div>
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                            <span className="text-red-600 font-bold text-lg">❌</span>
+                          <div className="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center"> {/* Kırmızı arka plan */}
+                            <span className="text-error font-bold text-lg">❌</span>
                           </div>
-                          <h5 className="font-bold text-gray-800">ORİJİNAL</h5>
+                          <h5 className="font-bold text-text-dark">ORİJİNAL</h5>
                         </div>
-                        <div className="bg-white rounded-xl p-4 border-2 border-red-200 shadow-sm">
-                          <div className="font-bold text-gray-900 mb-3 text-lg">
+                        <div className="bg-background-white rounded-xl p-4 border-2 border-error/50 shadow-sm"> {/* Kırmızı kenarlık */}
+                          <div className="font-bold text-text-dark mb-3 text-lg">
                             {approval.originalMeal?.items || 'Öğün bilgisi yok'}
                           </div>
                           <div className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                              <span className="text-gray-600">Kalori</span>
-                              <span className="font-bold text-blue-600">
+                            <div className="flex items-center justify-between py-2 border-b border-divider">
+                              <span className="text-text-medium">Kalori</span>
+                              <span className="font-bold text-tertiary"> {/* Turuncu */}
                                 {approval.originalMeal?.calories || 0} kcal
                               </span>
                             </div>
                             {approval.originalMeal?.portion && (
-                              <div className="flex items-center gap-2 text-gray-700">
-                                <ChefHat size={14} />
+                              <div className="flex items-center gap-2 text-text-dark">
+                                <ChefHat size={14} className="text-text-medium" />
                                 <span>{approval.originalMeal.portion}</span>
                               </div>
                             )}
@@ -111,43 +124,43 @@ function OnayListesi() {
                       {/* Alternatif */}
                       <div>
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <span className="text-green-600 font-bold text-lg">✨</span>
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"> {/* Yeşil arka plan */}
+                            <span className="text-primary font-bold text-lg">✨</span>
                           </div>
-                          <h5 className="font-bold text-gray-800">AI ÖNERİSİ</h5>
+                          <h5 className="font-bold text-text-dark">AI ÖNERİSİ</h5>
                         </div>
-                        <div className="bg-white rounded-xl p-4 border-2 border-green-200 shadow-sm">
-                          <div className="font-bold text-gray-900 mb-3 text-lg">
+                        <div className="bg-background-white rounded-xl p-4 border-2 border-primary/50 shadow-sm"> {/* Yeşil kenarlık */}
+                          <div className="font-bold text-text-dark mb-3 text-lg">
                             {approval.suggestedAlternative?.name || 'Yeni Tarif'}
                           </div>
                           <div className="grid grid-cols-2 gap-2 mb-3">
-                            <div className="bg-blue-50 rounded-lg p-2 text-center border border-blue-200">
-                              <div className="text-xs text-gray-600">Kalori</div>
-                              <div className="font-bold text-blue-600">
+                            <div className="bg-background-light rounded-lg p-2 text-center border border-divider">
+                              <div className="text-xs text-text-medium">Kalori</div>
+                              <div className="font-bold text-tertiary"> {/* Turuncu */}
                                 {approval.suggestedAlternative?.calories}
                               </div>
                             </div>
-                            <div className="bg-green-50 rounded-lg p-2 text-center border border-green-200">
-                              <div className="text-xs text-gray-600">Protein</div>
-                              <div className="font-bold text-green-600">
+                            <div className="bg-background-light rounded-lg p-2 text-center border border-divider">
+                              <div className="text-xs text-text-medium">Protein</div>
+                              <div className="font-bold text-primary"> {/* Yeşil */}
                                 {approval.suggestedAlternative?.protein}g
                               </div>
                             </div>
-                            <div className="bg-orange-50 rounded-lg p-2 text-center border border-orange-200">
-                              <div className="text-xs text-gray-600">Karb</div>
-                              <div className="font-bold text-orange-600">
+                            <div className="bg-background-light rounded-lg p-2 text-center border border-divider">
+                              <div className="text-xs text-text-medium">Karb</div>
+                              <div className="font-bold text-tertiary"> {/* Turuncu */}
                                 {approval.suggestedAlternative?.carbs}g
                               </div>
                             </div>
-                            <div className="bg-red-50 rounded-lg p-2 text-center border border-red-200">
-                              <div className="text-xs text-gray-600">Yağ</div>
-                              <div className="font-bold text-red-600">
+                            <div className="bg-background-light rounded-lg p-2 text-center border border-divider">
+                              <div className="text-xs text-text-medium">Yağ</div>
+                              <div className="font-bold text-secondary"> {/* Sarı */}
                                 {approval.suggestedAlternative?.fat}g
                               </div>
                             </div>
                           </div>
                           {approval.suggestedAlternative?.ingredients && (
-                            <div className="text-xs text-gray-700 bg-gray-50 rounded-lg p-2">
+                            <div className="text-xs text-text-dark bg-background-light rounded-lg p-2 border border-divider">
                               <span className="font-medium">Malzemeler: </span>
                               {approval.suggestedAlternative.ingredients.join(", ")}
                             </div>
@@ -158,14 +171,14 @@ function OnayListesi() {
 
                     {/* AI Açıklama */}
                     {approval.suggestedAlternative?.aiReason && (
-                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 mb-6 border-2 border-purple-200">
+                      <div className="bg-background-light rounded-xl p-4 mb-6 border-2 border-secondary/50"> {/* Sarımsı arka plan */}
                         <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-bold">🤖</span>
+                          <div className="w-8 h-8 bg-tertiary rounded-lg flex items-center justify-center flex-shrink-0"> {/* Turuncu ikon arka planı */}
+                            <span className="text-background-white font-bold">🤖</span>
                           </div>
                           <div className="flex-1">
-                            <div className="text-xs font-bold text-purple-700 mb-1">AI AÇIKLAMA</div>
-                            <p className="text-sm text-purple-900 leading-relaxed">
+                            <div className="text-xs font-bold text-tertiary mb-1">AI AÇIKLAMA</div>
+                            <p className="text-sm text-text-dark leading-relaxed">
                               {approval.suggestedAlternative.aiReason}
                             </p>
                           </div>
@@ -174,17 +187,17 @@ function OnayListesi() {
                     )}
 
                     {/* Butonlar */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-divider">
                       <button
                         onClick={() => handleApproval(client.id, approval.id, 'approve')}
-                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                        className="bg-primary hover:bg-primary/90 text-text-dark py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                       >
                         <Check size={24} strokeWidth={3} />
                         Onayla
                       </button>
                       <button
                         onClick={() => handleApproval(client.id, approval.id, 'reject')}
-                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                        className="bg-error hover:bg-error/90 text-background-white py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                       >
                         <X size={24} strokeWidth={3} />
                         Reddet
@@ -197,15 +210,15 @@ function OnayListesi() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md border-2 border-gray-200 p-12 text-center">
-          <div className="inline-block p-4 bg-green-100 rounded-full mb-4">
-            <Check size={48} className="text-green-500" strokeWidth={2.5} />
+        <div className="bg-background-white rounded-2xl shadow-md border-2 border-divider p-12 text-center">
+          <div className="inline-block p-4 bg-primary/10 rounded-full mb-4"> {/* Yeşil arka plan */}
+            <Check size={48} className="text-primary" strokeWidth={2.5} /> {/* Yeşil ikon */}
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">Harika İş! 🎉</h3>
-          <p className="text-gray-600 text-lg">
+          <h3 className="text-2xl font-bold text-text-dark mb-2">Harika İş! 🎉</h3>
+          <p className="text-text-medium text-lg">
             Onay bekleyen herhangi bir talep bulunmuyor.
           </p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-text-medium/80 mt-2">
             Danışanlarınız alternatif talep ettiğinde burada görünecektir.
           </p>
         </div>

@@ -1,4 +1,4 @@
-// src/components/WeeklyMenuTracker.jsx - TAMAMEN DÜZELTILMIŞ
+// src/components/WeeklyMenuTracker.jsx - Renk Paleti Uygulanmış Hali (DÜZELTİLMİŞ)
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -11,6 +11,20 @@ import AIAlternativeModal from './AIAlternativeModal.jsx';
 import ShoppingListModal from './ShoppingListModal.jsx';
 import WeightTrackingChart from './WeightTrackingChart.jsx';
 import { DAY_NAMES, DAYS } from '../data/weeklyMenuTemplate';
+
+// tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
+// Recharts gibi kütüphanelerde doğrudan kullanabilmek için
+const COLORS = {
+  primary: '#cbf078',
+  secondary: '#f8f398',
+  tertiary: '#f1b963',
+  error: '#e46161',
+  'text-dark': '#333333',
+  'text-medium': '#666666',
+  'background-light': '#f8f8f8',
+  'background-white': '#ffffff',
+  divider: '#e0e0e0',
+};
 
 function WeeklyMenuTracker() {
   const { clientId } = useParams();
@@ -191,12 +205,12 @@ function WeeklyMenuTracker() {
 
   if (!client) {
     return (
-      <div className="text-center p-8 bg-white rounded-xl shadow-md">
-        <h2 className="text-2xl font-bold text-red-600">Danışan Bulunamadı</h2>
-        <p className="mt-2 text-gray-600">Lütfen danışan listesine geri dönün.</p>
+      <div className="text-center p-8 bg-background-white rounded-xl shadow-md">
+        <h2 className="text-2xl font-bold text-error">Danışan Bulunamadı</h2>
+        <p className="mt-2 text-text-medium">Lütfen danışan listesine geri dönün.</p>
         <button 
           onClick={() => navigate('/dietitian/clients')} 
-          className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="mt-6 px-6 py-2 bg-tertiary text-text-dark rounded-lg hover:bg-tertiary/90 transition-colors"
         >
           Danışan Listesine Dön
         </button>
@@ -221,7 +235,7 @@ function WeeklyMenuTracker() {
       dayMeals.forEach(meal => {
         if (meal.status === 'completed') completedMeals++;
         if (meal.status === 'skipped') skippedMeals++;
-        if (meal.aiModified) aiChanges++;
+        if (meal.aiModified) aiChanges++; 
       });
     });
 
@@ -280,78 +294,78 @@ function WeeklyMenuTracker() {
 
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="bg-primary rounded-2xl p-6 text-text-dark shadow-lg"> 
           <button 
             onClick={() => navigate('/dietitian/clients')} 
-            className="text-white/80 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+            className="text-text-dark/80 hover:text-text-dark mb-4 flex items-center gap-2 transition-colors"
           >
             ← Danışan Listesine Dön
           </button>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h2 className="text-3xl font-bold mb-2">Haftalık Menü Takibi</h2>
-              <p className="text-green-100">{client.name} - {DAY_NAMES[selectedDay]}</p>
+              <p className="text-text-dark/80">{client.name} - {DAY_NAMES[selectedDay]}</p> 
             </div>
             <div className="text-right">
               <div className="text-4xl font-bold">{totalCalories}</div>
-              <div className="text-green-100">Günlük Kalori</div>
+              <div className="text-text-dark/80">Günlük Kalori</div>
             </div>
           </div>
         </div>
 
         {/* İstatistik Kartları */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-background-white rounded-xl p-4 shadow-sm border border-divider">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <ChefHat className="text-blue-600" size={20} />
+              <div className="p-2 bg-secondary rounded-lg"> 
+                <ChefHat className="text-tertiary" size={20} /> 
               </div>
               <div>
-                <div className="text-xs text-gray-600">Toplam Öğün</div>
-                <div className="text-xl font-bold text-gray-800">{weeklyStats.totalMeals}</div>
+                <div className="text-xs text-text-medium">Toplam Öğün</div>
+                <div className="text-xl font-bold text-text-dark">{weeklyStats.totalMeals}</div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-background-white rounded-xl p-4 shadow-sm border border-divider">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Check className="text-green-600" size={20} />
+              <div className="p-2 bg-primary/20 rounded-lg"> 
+                <Check className="text-primary" size={20} /> 
               </div>
               <div>
-                <div className="text-xs text-gray-600">Tamamlanan</div>
-                <div className="text-xl font-bold text-gray-800">{weeklyStats.completedMeals}</div>
+                <div className="text-xs text-text-medium">Tamamlanan</div>
+                <div className="text-xl font-bold text-text-dark">{weeklyStats.completedMeals}</div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-background-white rounded-xl p-4 shadow-sm border border-divider">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <X className="text-red-600" size={20} />
+              <div className="p-2 bg-error/20 rounded-lg"> 
+                <X className="text-error" size={20} /> 
               </div>
               <div>
-                <div className="text-xs text-gray-600">Atlanan</div>
-                <div className="text-xl font-bold text-gray-800">{weeklyStats.skippedMeals}</div>
+                <div className="text-xs text-text-medium">Atlanan</div>
+                <div className="text-xl font-bold text-text-dark">{weeklyStats.skippedMeals}</div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="bg-background-white rounded-xl p-4 shadow-sm border border-divider">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Sparkles className="text-purple-600" size={20} />
+              <div className="p-2 bg-secondary rounded-lg"> 
+                <Sparkles className="text-tertiary" size={20} /> 
               </div>
               <div>
-                <div className="text-xs text-gray-600">AI Değişiklik</div>
-                <div className="text-xl font-bold text-gray-800">{weeklyStats.aiChanges}</div>
+                <div className="text-xs text-text-medium">AI Değişiklik</div>
+                <div className="text-xl font-bold text-text-dark">{weeklyStats.aiChanges}</div>
               </div>
             </div>
           </div>
         </div>
         
         {/* Gün Seçici ve Butonlar */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+        <div className="bg-background-white rounded-xl p-4 shadow-sm border border-divider">
           <div className="flex flex-wrap gap-4 justify-between items-center">
             <div className="flex gap-2 overflow-x-auto pb-2">
               {DAYS.map(day => (
@@ -360,8 +374,8 @@ function WeeklyMenuTracker() {
                   onClick={() => setSelectedDay(day)} 
                   className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-all text-sm ${
                     selectedDay === day 
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary text-text-dark shadow-md' 
+                      : 'bg-background-light text-text-dark hover:bg-divider' 
                   }`}
                 >
                   {DAY_NAMES[day]}
@@ -370,7 +384,7 @@ function WeeklyMenuTracker() {
             </div>
             <button 
               onClick={() => setIsMealModalOpen(true)} 
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-text-dark rounded-lg hover:bg-primary/90 font-semibold transition-colors"
             >
               <PlusCircle size={18} />
               Öğün Ekle
@@ -378,7 +392,7 @@ function WeeklyMenuTracker() {
           </div>
           <button 
             onClick={() => setShowShoppingListModal(true)} 
-            className="w-full mt-4 bg-blue-500 text-white py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-4 bg-tertiary text-text-dark py-2 rounded-lg font-medium hover:bg-tertiary/90 transition-colors flex items-center justify-center gap-2"
           >
             <ShoppingBag size={18} />
             Alışveriş Listesi Oluştur
@@ -386,8 +400,8 @@ function WeeklyMenuTracker() {
         </div>
 
         {/* Kilo Takibi Grafiği */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Kilo Takibi</h3>
+        <div className="bg-background-white rounded-xl p-6 shadow-sm border border-divider">
+          <h3 className="text-lg font-semibold text-text-dark mb-4">Kilo Takibi</h3>
           {weightChartData.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -396,10 +410,12 @@ function WeeklyMenuTracker() {
                   <XAxis 
                     dataKey="week" 
                     tick={{ fontSize: 12 }}
+                    stroke={COLORS['text-medium']} // X ekseni metin rengi
                   />
                   <YAxis 
                     domain={['dataMin - 2', 'dataMax + 2']}
                     tick={{ fontSize: 12 }}
+                    stroke={COLORS['text-medium']} // Y ekseni metin rengi
                   />
                   <Tooltip 
                     formatter={(value, name) => [`${value} kg`, 'Kilo']}
@@ -413,20 +429,20 @@ function WeeklyMenuTracker() {
                   <Line 
                     type="monotone" 
                     dataKey="weight" 
-                    stroke="#3B82F6" 
+                    stroke={COLORS.tertiary} // Kilo çizgi rengi (turuncu)
                     strokeWidth={3}
-                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
-                    activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2 }}
+                    dot={{ fill: COLORS.tertiary, strokeWidth: 2, r: 6 }} // Nokta rengi (turuncu)
+                    activeDot={{ r: 8, stroke: COLORS.tertiary, strokeWidth: 2 }} // Aktif nokta rengi (turuncu)
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+            <div className="h-64 flex items-center justify-center bg-background-light rounded-lg">
               <div className="text-center">
-                <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">Henüz kilo verisi bulunmuyor</p>
-                <p className="text-sm text-gray-400">İlk kilo girişini yaparak takibe başlayın</p>
+                <TrendingUp className="w-12 h-12 text-text-medium mx-auto mb-2" />
+                <p className="text-text-medium">Henüz kilo verisi bulunmuyor</p>
+                <p className="text-sm text-text-medium">İlk kilo girişini yaparak takibe başlayın</p>
               </div>
             </div>
           )}
@@ -438,36 +454,36 @@ function WeeklyMenuTracker() {
             currentDayMeals.map((mealItem, index) => (
               <div 
                 key={mealItem.id || index} 
-                className={`bg-white rounded-xl p-5 shadow-sm border-2 transition-all ${
+                className={`bg-background-white rounded-xl p-5 shadow-sm border-2 transition-all ${
                   mealItem.status === 'completed' 
-                    ? 'border-green-300 bg-green-50' 
+                    ? 'border-primary bg-primary/10' 
                     : mealItem.status === 'skipped' 
-                    ? 'border-red-300 bg-red-50' 
-                    : 'border-gray-200'
+                    ? 'border-error bg-error/10' 
+                    : 'border-divider' 
                 }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                      <div className="px-3 py-1 bg-secondary text-text-dark rounded-full text-sm font-medium">
                         {mealItem.mealType}
                       </div>
                       {mealItem.status === 'completed' && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-medium">
                           ✓ Tamamlandı
                         </span>
                       )}
                       {mealItem.status === 'skipped' && (
-                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">
+                        <span className="text-xs bg-error/20 text-error px-2 py-1 rounded-full font-medium">
                           ✗ Atlandı
                         </span>
                       )}
                     </div>
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">
+                    <h4 className="text-xl font-bold text-text-dark mb-2">
                       {mealItem.items}
                     </h4>
-                    <p className="text-gray-600 mb-3">📏 Porsiyon: {mealItem.portion}</p>
-                    <div className="font-bold text-blue-600">
+                    <p className="text-text-medium mb-3">📏 Porsiyon: {mealItem.portion}</p>
+                    <div className="font-bold text-tertiary"> 
                       🔥 Kalori: {mealItem.calories}
                     </div>
                   </div>
@@ -475,7 +491,7 @@ function WeeklyMenuTracker() {
                   {/* Sil Butonu */}
                   <button
                     onClick={() => handleDeleteMeal(index)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
+                    className="text-error hover:text-error/80 hover:bg-error/10 p-2 rounded-lg transition-all"
                     title="Öğünü Sil"
                   >
                     <Trash2 size={20} />
@@ -489,8 +505,8 @@ function WeeklyMenuTracker() {
                       onClick={() => handleMealStatus(index, 'completed')} 
                       className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
                         mealItem.status === 'completed' 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          ? 'bg-primary text-text-dark' 
+                          : 'bg-primary/20 text-primary hover:bg-primary/30'
                       }`}
                     >
                       <Check size={18} />
@@ -500,8 +516,8 @@ function WeeklyMenuTracker() {
                       onClick={() => handleMealStatus(index, 'skipped')} 
                       className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
                         mealItem.status === 'skipped' 
-                          ? 'bg-red-500 text-white' 
-                          : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          ? 'bg-error text-background-white' 
+                          : 'bg-error/20 text-error hover:bg-error/30'
                       }`}
                     >
                       <X size={18} />
@@ -511,14 +527,14 @@ function WeeklyMenuTracker() {
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleRequestAlternative(index)} 
-                      className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:from-purple-600 hover:to-pink-600"
+                      className="flex-1 bg-gradient-to-r from-secondary to-tertiary text-text-dark py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:from-secondary/90 hover:to-tertiary/90"
                     >
                       <Sparkles size={18} />
                       Alternatif İste
                     </button>
                     <button 
                       onClick={() => handleRequestIngredients(index)} 
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:from-orange-600 hover:to-red-600"
+                      className="flex-1 bg-gradient-to-r from-tertiary to-error text-background-white py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:from-tertiary/90 hover:to-error/90"
                     >
                       <ChefHat size={18} />
                       Elimde Bunlar Var
@@ -528,7 +544,7 @@ function WeeklyMenuTracker() {
               </div>
             ))
           ) : (
-            <div className="text-center py-10 text-gray-500 bg-white rounded-xl border-2 border-dashed">
+            <div className="text-center py-10 text-text-medium bg-background-white rounded-xl border-2 border-dashed border-divider">
               <p className="font-semibold">Bu gün için henüz öğün eklenmemiş.</p>
               <p className="text-sm mt-1">Başlamak için "Öğün Ekle" butonuna tıklayın.</p>
             </div>

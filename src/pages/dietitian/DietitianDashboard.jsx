@@ -1,4 +1,4 @@
-// src/pages/dietitian/DietitianDashboard.jsx
+// src/pages/dietitian/DietitianDashboard.jsx - Renk Paleti Uygulanmış Hali (GRAFİK BAR RENKLERİ KESİN DÜZELTME)
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,20 @@ import BMIFilter from '../../components/BMIFilter';
 import WeightTrackingChart from '../../components/WeightTrackingChart';
 import { DAYS } from '../../data/weeklyMenuTemplate';
 
+// tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
+// Recharts gibi kütüphanelerde doğrudan kullanabilmek için
+const COLORS = {
+  primary: '#cbf078',
+  secondary: '#f8f398',
+  tertiary: '#f1b963',
+  error: '#e46161',
+  'text-dark': '#333333',
+  'text-medium': '#666666',
+  'background-light': '#f8f8f8',
+  'background-white': '#ffffff',
+  divider: '#e0e0e0',
+};
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -17,20 +31,20 @@ const CustomTooltip = ({ active, payload, label }) => {
 
     if (Object.keys(breakdown).length === 0) {
         return (
-             <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-                <p className="font-bold text-gray-800">{`${label}`}</p>
-                <p className="text-sm text-gray-700">Bu gün kayıtlı öğün yok.</p>
-            </div>
+             <div className="bg-background-white p-3 rounded-lg shadow-lg border border-divider">
+                <p className="font-bold text-text-dark">{`${label}`}</p>
+                <p className="text-sm text-text-medium">Bu gün kayıtlı öğün yok.</p>
+             </div>
         );
     }
 
     return (
-      <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-        <p className="font-bold text-gray-800">{`${label}`}</p>
-        <p className="text-sm text-blue-600 font-semibold mb-2">{`Toplam Kayıtlı Öğün: ${data.meals}`}</p>
-        <div className="border-t pt-2">
-          <p className="text-xs font-bold text-gray-600 mb-1">Dağılım:</p>
-          <ul className="text-sm text-gray-700 space-y-1">
+      <div className="bg-background-white p-3 rounded-lg shadow-lg border border-divider">
+        <p className="font-bold text-text-dark">{`${label}`}</p>
+        <p className="text-sm text-primary font-semibold mb-2">{`Toplam Kayıtlı Öğün: ${data.meals}`}</p> 
+        <div className="border-t border-divider pt-2">
+          <p className="text-xs font-bold text-text-medium mb-1">Dağılım:</p>
+          <ul className="text-sm text-text-dark space-y-1">
             {Object.entries(breakdown).map(([clientName, count]) => (
               <li key={clientName}>
                 <span className="font-semibold">{clientName}:</span> {count} öğün
@@ -149,45 +163,62 @@ function DietitianDashboard() {
 
   const totalClients = clients.length;
   const avgAdherence = totalClients > 0 ? Math.round(clients.reduce((sum, c) => sum + c.adherence, 0) / totalClients) : 0;
-  const totalAiUsage = totalClients > 0 ? clients.reduce((sum, c) => sum + c.aiUsageCount, 0) : 0;
+  const totalAiUsage = totalClients > 0 ? clients.reduce((sum, c) => sum + (c.aiUsageCount || 0), 0) : 0;
   const pendingApprovalCount = totalClients > 0 ? clients.reduce((sum, c) => sum + (c.pendingApprovals ? c.pendingApprovals.length : 0), 0) : 0;
   
-  // BU KISIM ZATEN DİNAMİK ÇALIŞIYOR
-  const aiUsageData = clients.map(c => ({ name: c.name, usage: c.aiUsageCount })).sort((a, b) => b.usage - a.usage);
+  const aiUsageData = clients.map(c => ({ name: c.name, usage: c.aiUsageCount || 0 })).sort((a, b) => b.usage - a.usage);
 
   return (
     <div className="space-y-6">
       {/* İstatistik Kartları - En Üstte */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} title="Toplam Danışan" value={totalClients} onClick={() => navigate('/dietitian/clients')} color="bg-blue-500" />
-        <StatCard icon={Activity} title="Uyum Oranı" value={`${avgAdherence}%`} color="bg-green-500" />
-        <StatCard icon={Sparkles} title="AI Kullanımı" value={totalAiUsage} color="bg-purple-500" />
-        <StatCard icon={Check} title="Onay Bekleyen" value={pendingApprovalCount} onClick={() => navigate('/dietitian/approvals')} color="bg-red-500" />
+        <StatCard icon={Users} title="Toplam Danışan" value={totalClients} onClick={() => navigate('/dietitian/clients')} color="bg-tertiary" /> 
+        <StatCard icon={Activity} title="Uyum Oranı" value={`${avgAdherence}%`} color="bg-primary" /> 
+        <StatCard icon={Sparkles} title="AI Kullanımı" value={totalAiUsage} color="bg-secondary" /> 
+        <StatCard icon={Check} title="Onay Bekleyen" value={pendingApprovalCount} onClick={() => navigate('/dietitian/approvals')} color="bg-error" /> 
       </div>
 
       {/* Grafikler - İstatistik Kartlarının Hemen Altında */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Haftalık Öğün Takibi</h3>
+        <div className="bg-background-white rounded-xl p-6 shadow-sm border border-divider">
+          <h3 className="text-lg font-semibold text-text-dark mb-4">Haftalık Öğün Takibi</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={mealFrequencyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="day" stroke="#9ca3af" fontSize={12} />
-              <YAxis allowDecimals={false} stroke="#9ca3af" fontSize={12} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(239, 246, 255, 0.6)' }} />
-              <Bar dataKey="meals" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.divider} /> 
+              <XAxis dataKey="day" stroke={COLORS['text-medium']} fontSize={12} />
+              <YAxis allowDecimals={false} stroke={COLORS['text-medium']} fontSize={12} />
+              
+              {/* BURASI DÜZELTİLDİ: 
+                "yeşil sütün" dediğin bu grafik. 
+                cursor'ı standart 'fill' ve 'fillOpacity' olarak ayarlandı.
+              */}
+              <Tooltip 
+                content={<CustomTooltip />} 
+                cursor={{ fill: COLORS.divider, fillOpacity: 0.3 }} 
+              /> 
+
+              <Bar dataKey="meals" fill={COLORS.primary} radius={[8, 8, 0, 0]} /> {/* primary rengini kullanacak */}
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Danışan AI Kullanım Raporu</h3>
+        <div className="bg-background-white rounded-xl p-6 shadow-sm border border-divider">
+          <h3 className="text-lg font-semibold text-text-dark mb-4">Danışan AI Kullanım Raporu</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={aiUsageData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
-              <YAxis allowDecimals={false} stroke="#9ca3af" fontSize={12} />
-              <Tooltip formatter={(value) => [`${value} kez`, 'Kullanım']} />
-              <Bar dataKey="usage" fill="#8884d8" radius={[8, 8, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.divider} /> 
+              <XAxis dataKey="name" stroke={COLORS['text-medium']} fontSize={12} />
+              <YAxis allowDecimals={false} stroke={COLORS['text-medium']} fontSize={12} />
+
+              {/* BURASI DA DÜZELTİLDİ: 
+                Burası "ai kullanımı" grafiği (örnek gösterdiğin).
+                İkisinin de tutarlı "açık grimsi" olması için bu da aynı yapıldı.
+              */}
+              <Tooltip 
+                formatter={(value) => [`${value} kez`, 'Kullanım']} 
+                cursor={{ fill: COLORS.divider, fillOpacity: 0.3 }} 
+              />
+              
+              <Bar dataKey="usage" fill={COLORS.secondary} radius={[8, 8, 0, 0]} /> {/* secondary rengini kullanacak */}
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -201,35 +232,35 @@ function DietitianDashboard() {
       />
 
       {/* Filtrelenmiş Danışan Listesi */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-background-white rounded-xl p-6 shadow-sm border border-divider">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">
+          <h3 className="text-lg font-semibold text-text-dark">
             {selectedBMICategory === 'Tümü' ? 'Tüm Danışanlar' : `${selectedBMICategory} Danışanlar`}
           </h3>
-          <span className="text-sm text-gray-500">{filteredClients.length} danışan</span>
+          <span className="text-sm text-text-medium">{filteredClients.length} danışan</span>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => (
             <div 
               key={client.id}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+              className="border border-divider rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => setSelectedClient(client)}
             >
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-800">{client.name}</h4>
+                <h4 className="font-semibold text-text-dark">{client.name}</h4>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  client.bmiCategory === 'Normal' ? 'bg-green-100 text-green-700' :
-                  client.bmiCategory === 'Zayıf' ? 'bg-blue-100 text-blue-700' :
-                  client.bmiCategory === 'Fazla kilolu' ? 'bg-yellow-100 text-yellow-700' :
-                  client.bmiCategory === 'Obez' ? 'bg-orange-100 text-orange-700' :
-                  'bg-red-100 text-red-700'
+                  client.bmiCategory === 'Normal' ? 'bg-primary/20 text-primary' : 
+                  client.bmiCategory === 'Zayıf' ? 'bg-secondary/20 text-secondary' : 
+                  client.bmiCategory === 'Fazla kilolu' ? 'bg-tertiary/20 text-tertiary' : 
+                  client.bmiCategory === 'Obez' ? 'bg-error/20 text-error' : 
+                  'bg-error/20 text-error' 
                 }`}>
                   {client.bmiCategory}
                 </span>
               </div>
               
-              <div className="space-y-1 text-sm text-gray-600">
+              <div className="space-y-1 text-sm text-text-medium">
                 <p>Kilo: {client.currentWeight} kg</p>
                 <p>Hedef: {client.targetWeight} kg</p>
                 {client.bmi && <p>BMI: {client.bmi}</p>}
@@ -242,14 +273,14 @@ function DietitianDashboard() {
 
       {/* Kilo Takibi Grafiği */}
       {selectedClient && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-background-white rounded-xl p-6 shadow-sm border border-divider">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-text-dark">
               {selectedClient.name} - Kilo Takibi
             </h3>
             <button
               onClick={() => setSelectedClient(null)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-text-medium hover:text-text-dark"
             >
               ✕
             </button>
@@ -259,6 +290,7 @@ function DietitianDashboard() {
             clientName={selectedClient.name}
             targetWeight={selectedClient.targetWeight}
             height={selectedClient.height}
+            lineColor={COLORS.tertiary} 
           />
         </div>
       )}

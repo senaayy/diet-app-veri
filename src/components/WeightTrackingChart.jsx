@@ -1,8 +1,23 @@
+// src/components/WeightTrackingChart.jsx - Renk Paleti Uygulanmış Hali
+
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Target, Calendar } from 'lucide-react';
 
-const WeightTrackingChart = ({ clientId, clientName, targetWeight, height }) => {
+// tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
+const COLORS = {
+  primary: '#cbf078',
+  secondary: '#f8f398',
+  tertiary: '#f1b963',
+  error: '#e46161',
+  'text-dark': '#333333',
+  'text-medium': '#666666',
+  'background-light': '#f8f8f8',
+  'background-white': '#ffffff',
+  divider: '#e0e0e0',
+};
+
+const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineColor }) => {
   const [weightHistory, setWeightHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(1);
@@ -77,46 +92,46 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height }) => 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tertiary"></div> {/* Spinner rengi */}
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-background-white rounded-xl shadow-lg p-6 border border-divider">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-xl font-semibold text-gray-800">{clientName} - Kilo Takibi</h3>
-          <p className="text-sm text-gray-600">Haftalık kilo değişimi</p>
+          <h3 className="text-xl font-semibold text-text-dark">{clientName} - Kilo Takibi</h3>
+          <p className="text-sm text-text-medium">Haftalık kilo değişimi</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="text-center">
-            <p className="text-sm text-gray-600">Mevcut Kilo</p>
-            <p className="text-2xl font-bold text-blue-600">{currentWeight} kg</p>
+            <p className="text-sm text-text-medium">Mevcut Kilo</p>
+            <p className="text-2xl font-bold text-tertiary">{currentWeight} kg</p> {/* Turuncu */}
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Hedef</p>
-            <p className="text-2xl font-bold text-green-600">{targetWeight} kg</p>
+            <p className="text-sm text-text-medium">Hedef</p>
+            <p className="text-2xl font-bold text-primary">{targetWeight} kg</p> {/* Yeşil */}
           </div>
         </div>
       </div>
 
       {/* BMI Bilgisi */}
       {currentBMI && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mb-6 p-4 bg-background-light rounded-lg border border-divider">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Vücut Kitle İndeksi</p>
-              <p className="text-2xl font-bold text-purple-600">{currentBMI.toFixed(1)}</p>
+              <p className="text-sm text-text-medium">Vücut Kitle İndeksi</p>
+              <p className="text-2xl font-bold text-secondary">{currentBMI.toFixed(1)}</p> {/* Sarı */}
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-600">Kategori</p>
+              <p className="text-sm text-text-medium">Kategori</p>
               <p className={`text-lg font-semibold ${
-                bmiCategory === 'Normal' ? 'text-green-600' :
-                bmiCategory === 'Zayıf' ? 'text-blue-600' :
-                bmiCategory === 'Fazla kilolu' ? 'text-yellow-600' :
-                bmiCategory === 'Obez' ? 'text-orange-600' :
-                'text-red-600'
+                bmiCategory === 'Normal' ? 'text-primary' :
+                bmiCategory === 'Zayıf' ? 'text-secondary' :
+                bmiCategory === 'Fazla kilolu' ? 'text-tertiary' :
+                bmiCategory === 'Obez' ? 'text-error' :
+                'text-error'
               }`}>
                 {bmiCategory}
               </p>
@@ -131,14 +146,16 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height }) => 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke={COLORS.divider} />
                 <XAxis 
                   dataKey="week" 
                   tick={{ fontSize: 12 }}
+                  stroke={COLORS['text-medium']}
                 />
                 <YAxis 
                   domain={['dataMin - 2', 'dataMax + 2']}
                   tick={{ fontSize: 12 }}
+                  stroke={COLORS['text-medium']}
                 />
                 <Tooltip 
                   formatter={(value, name) => [`${value} kg`, 'Kilo']}
@@ -152,28 +169,28 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height }) => 
                 <Line 
                   type="monotone" 
                   dataKey="weight" 
-                  stroke="#3B82F6" 
+                  stroke={lineColor || COLORS.tertiary} // Prop veya varsayılan turuncu
                   strokeWidth={3}
-                  dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
-                  activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2 }}
+                  dot={{ fill: lineColor || COLORS.tertiary, strokeWidth: 2, r: 6 }}
+                  activeDot={{ r: 8, stroke: lineColor || COLORS.tertiary, strokeWidth: 2 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+          <div className="h-64 flex items-center justify-center bg-background-light rounded-lg border border-divider">
             <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">Henüz kilo verisi bulunmuyor</p>
-              <p className="text-sm text-gray-400">İlk kilo girişini yaparak takibe başlayın</p>
+              <TrendingUp className="w-12 h-12 text-text-medium mx-auto mb-2" />
+              <p className="text-text-medium">Henüz kilo verisi bulunmuyor</p>
+              <p className="text-sm text-text-medium">İlk kilo girişini yaparak takibe başlayın</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Kilo Girişi Formu */}
-      <div className="border-t pt-4">
-        <h4 className="text-lg font-semibold mb-4">Yeni Kilo Girişi</h4>
+      <div className="border-t border-divider pt-4">
+        <h4 className="text-lg font-semibold text-text-dark mb-4">Yeni Kilo Girişi</h4>
         <WeightEntryForm 
           onAddWeight={addWeightEntry}
           currentWeek={currentWeek}
@@ -207,7 +224,7 @@ const WeightEntryForm = ({ onAddWeight, currentWeek, targetWeight }) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-text-dark mb-1">
             Kilo (kg)
           </label>
           <input
@@ -215,14 +232,14 @@ const WeightEntryForm = ({ onAddWeight, currentWeek, targetWeight }) => {
             step="0.1"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Örn: 75.5"
             required
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-text-dark mb-1">
             Hafta
           </label>
           <input
@@ -230,7 +247,7 @@ const WeightEntryForm = ({ onAddWeight, currentWeek, targetWeight }) => {
             min="1"
             value={week}
             onChange={(e) => setWeek(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             required
           />
         </div>
@@ -239,7 +256,7 @@ const WeightEntryForm = ({ onAddWeight, currentWeek, targetWeight }) => {
           <button
             type="submit"
             disabled={isSubmitting || !weight || !week}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-primary text-text-dark py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmitting ? 'Kaydediliyor...' : 'Kilo Ekle'}
           </button>
@@ -247,13 +264,13 @@ const WeightEntryForm = ({ onAddWeight, currentWeek, targetWeight }) => {
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-text-dark mb-1">
           Notlar (Opsiyonel)
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
           rows={2}
           placeholder="Bu hafta hakkında notlar..."
         />

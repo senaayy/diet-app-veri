@@ -1,20 +1,29 @@
-/* src/App.css */
+/* src/App.css - Tüm Renk Paleti Entegrasyonları ve Recharts Düzeltmeleri */
+
+/*
+  Body etiketi için genel reset stilleri.
+  font-family, background-color, color gibi özellikler artık public/index.html dosyasındaki
+  <body> etiketine uygulanan Tailwind sınıfları (bg-background-light, text-text-dark, font-sans)
+  tarafından yönetilmektedir.
+*/
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f0f2f5;
-  color: #333;
 }
 
 .App {
   text-align: center;
 }
 
+/*
+  App-header stilini, daha önceki mevcut haliyle bırakıyoruz.
+  Eğer bu header'ı da Tailwind sınıflarıyla (örneğin bg-gray-900) yönetmek isterseniz,
+  bu bloğu JSX içindeki header elemanınıza taşıyabilirsiniz.
+*/
 .App-header {
-  background-color: #282c34;
+  background-color: #282c34; /* Mevcut koyu gri arka plan */
   padding: 20px;
-  color: white;
+  color: white; /* Başlık metni beyaz */
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -24,11 +33,74 @@ body {
   margin-bottom: 15px;
 }
 
+/* Aktif navigasyon butonu için birincil rengimizi kullanalım */
 .App-header nav button.active {
-  background-color: #0056b3; /* Aktif buton için daha koyu mavi */
+  background-color: #cbf078; /* primary rengimiz */
   transform: translateY(-2px);
 }
 
 button:hover {
     opacity: 0.9;
+}
+
+/*
+  Recharts Grafiklerine Özel CSS Düzeltmeleri
+  Bu kurallar, Recharts'in varsayılan SVG stillerini geçersiz kılmak için !important kullanır.
+*/
+
+/* Recharts grafiklerinin ana arka planını beyaz yapmak için */
+.recharts-wrapper .recharts-surface,
+.recharts-responsive-container {
+  fill: #ffffff !important; /* SVG'nin iç dolgu rengini beyaz yapar */
+  background-color: #ffffff !important; /* ResponsiveContainer'ın dış div'inin arkaplanını da beyaz yapar */
+}
+
+/* Haftalık Öğün Takibi grafiğindeki çubukların (Bar) rengini Primary yapmak için */
+/* Recharts tarafından oluşturulan çubuk elementlerinin doğrudan fill özelliğini hedefliyoruz */
+/* Bar'ın kendisi ve içindeki rect/path elementlerini hedefliyoruz */
+.recharts-bar-rectangle,
+.recharts-bar-rectangle rect,
+.recharts-bar-rectangle path {
+  fill: #cbf078 !important; /* COLORS.primary rengimizin HEX değeri */
+  stroke: #cbf078 !important; /* Kenarlık rengini de aynı yapıyoruz */
+}
+
+/* Recharts tarafından oluşturulan tüm metin elementlerinin rengini düzeltelim */
+/* Genellikle XAxis ve YAxis etiketleri, tooltip metinleri vb. için */
+.recharts-wrapper text {
+  fill: #333333 !important; /* COLORS.text-dark rengimizin HEX değeri */
+  font-size: 12px !important; /* Varsayılan font boyutunu koruyalım veya ayarlayalım */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; /* Font ailesini de zorla */
+}
+
+/* CartesianGrid (ızgara çizgileri) rengini ayarlayalım */
+.recharts-cartesian-grid line,
+.recharts-cartesian-grid path {
+  stroke: #e0e0e0 !important; /* COLORS.divider rengimizin HEX değeri */
+}
+
+/* Tooltip'in (ipucu kutusu) arkaplan rengi, kenarlığı ve metin renklerini düzeltelim */
+.recharts-tooltip-wrapper {
+  background-color: #ffffff !important; /* Tooltip arkaplan rengi */
+  border: 1px solid #e0e0e0 !important; /* Tooltip kenarlığı */
+  box-shadow: 0px 0px 5px rgba(0,0,0,0.1) !important; /* Gölge ekle */
+  padding: 10px !important; /* İç boşluk */
+  border-radius: 8px !important; /* Köşe yuvarlatma */
+  color: #333333 !important; /* Genel tooltip metin rengi */
+}
+/* Tooltip içindeki liste öğelerinin metin rengi */
+.recharts-tooltip-wrapper .recharts-tooltip-item-list,
+.recharts-tooltip-wrapper .recharts-tooltip-item {
+  color: #333333 !important;
+}
+
+/* Tooltip'in highlight cursor'u için de bir renk belirleyelim */
+/* Bu, çubuğun üzerine geldiğinizde vurgulanan alanın rengidir */
+/* Gri yapmak istediğiniz için text-medium rengimizin açık bir tonunu kullanacağız */
+.recharts-tooltip-cursor {
+  fill: rgba(102, 102, 102, 0.1) !important; /* COLORS.text-medium renginin %10 opaklıkta tonu (açık gri) */
+  /* Eğer sadece bir kenarlık istiyorsanız, bu satırı yorum satırı yapıp altındakini kullanın */
+  /* fill: none !important; */
+  /* stroke: #666666 !important; */
+  /* stroke-width: 1px !important; */
 }

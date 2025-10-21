@@ -1,8 +1,6 @@
-// src/context/ClientContext.jsx
+// src/context/ClientContext.jsx - DÜZELTILMIŞ
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-// Artık sahte veriye ihtiyacımız yok, bu satırı siliyoruz veya yorum satırı yapıyoruz.
-// import CLIENTS_DATA from '../data/clients'; 
 
 const ClientContext = createContext();
 
@@ -10,18 +8,29 @@ export const useClients = () => {
   return useContext(ClientContext);
 };
 
-export const ClientProvider = ({ children }) => {
-  const [clients, setClients] = useState([]); // Başlangıçta danışanlar boş bir dizi
-  const [loading, setLoading] = useState(true); // Veri yüklenirken true olacak
-  const [error, setError] = useState(null);   // Bir hata olursa burada saklanacak
+// Güvenli JSON parse fonksiyonu
+const safeJsonParse = (data, fallback = []) => {
+  if (!data) return fallback;
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.warn('JSON parse hatası:', e);
+      return fallback;
+    }
+  }
+  return data;
+};
 
-  // Bu useEffect, bileşen ilk yüklendiğinde SADECE BİR KEZ çalışır.
+export const ClientProvider = ({ children }) => {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        setLoading(true); // Veri çekme işlemi başlıyor
-
-        // Backend'imize GET isteği atıyoruz
+        setLoading(true);
         const response = await fetch('http://localhost:3001/api/clients');
 
         if (!response.ok) {
@@ -30,41 +39,100 @@ export const ClientProvider = ({ children }) => {
 
         const data = await response.json();
 
-        // Veritabanından gelen veriyi frontend'in anlayacağı formata dönüştürüyoruz.
-        // (Prisma'dan gelen Json alanları string'dir, bunları parse etmeliyiz)
         const formattedData = data.map(client => ({
           ...client,
-          // Bu alanlar şimdilik mock verideki gibi görünecek, daha sonra bunları da dinamik yapacağız.
-          pendingApprovals: [], 
-          notifications: [],
-          weeklyMenu: { monday: [], tuesday: [], wednesday: [] },
-          // Prisma, Json alanlarını string olarak döndürür. Objeye çeviriyoruz.
           allergens: client.allergens ? JSON.parse(client.allergens) : [],
-          weeklyProgress: client.weeklyProgress ? JSON.parse(client.weeklyProgress) : []
+          weeklyProgress: client.weeklyProgress ? JSON.parse(client.weeklyProgress) : [],
+          weeklyMenu: client.weeklyMenu ? JSON.parse(client.weeklyMenu) : { 
+            monday: [], 
+            tuesday: [], 
+            wednesday: [] 
+          },
+          pendingApprovals: client.pendingApprovals ? JSON.parse(client.pendingApprovals) : [],
+          notifications: [],
         }));
 
-        setClients(formattedData); // Gelen veriyi state'e kaydediyoruz
-        setError(null); // Başarılı olduğu için eski hataları temizliyoruz
+        setClients(formattedData);
+        setError(null);
 
       } catch (err) {
         console.error("API'dan veri çekerken hata oluştu:", err);
         setError("Danışan verileri yüklenemedi. Lütfen backend sunucunuzun çalıştığından emin olun.");
 
       } finally {
-        setLoading(false); // İşlem bitti, yüklenme durumunu kapatıyoruz
+        setLoading(false);
       }
     };
 
     fetchClients();
-  }, []); // Boş dizi `[]` sayesinde bu fonksiyon sadece ilk render'da çalışır.
+  }, []);
 
-  // Diğer fonksiyonlar (handleApproval vb.) gelecekte buraya eklenecek
-  // ve fetch ile PUT/POST istekleri yapacaklar.
+  // ✅ Yeni danışan ekle ve state'i güncelleyin
+  const addClient = (newClient) => {
+    const formattedClient = {
+      ...newClient,
+      allergens: typeof newClient.allergens === 'string' 
+        ? JSON.parse(newClient.allergens) 
+        : newClient.allergens || [],
+      weeklyProgress: typeof newClient.weeklyProgress === 'string'
+        ? JSON.parse(newClient.weeklyProgress)
+        : newClient.weeklyProgress || [],
+      weeklyMenu: typeof newClient.weeklyMenu === 'string'
+        ? JSON.parse(newClient.weeklyMenu)
+        : newClient.weeklyMenu || { monday: [], tuesday: [], wednesday: [] },
+      pendingApprovals: typeof newClient.pendingApprovals === 'string'
+        ? JSON.parse(newClient.pendingApprovals)
+        : newClient.pendingApprovals || [],
+      notifications: [],
+    };
+    setClients(prev => [formattedClient, ...prev]);
+  };
+
+  // ✅ Onay işle
+  const handleApproval = async (clientId, approvalId, action) => {
+    try {
+      const client = clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const updatedApprovals = client.pendingApprovals.filter(a => a.id !== approvalId);
+
+      // Backend'e gönder
+      const response = await fetch(`http://localhost:3001/api/clients/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pendingApprovals: updatedApprovals }),
+      });
+
+      if (!response.ok) throw new Error('Onay işlemi başarısız');
+
+      const updatedClient = await response.json();
+
+      // State güncelle
+      setClients(prev => prev.map(c => 
+        c.id === clientId 
+          ? {
+              ...c,
+              pendingApprovals: typeof updatedClient.pendingApprovals === 'string'
+                ? JSON.parse(updatedClient.pendingApprovals)
+                : updatedClient.pendingApprovals || [],
+            }
+          : c
+      ));
+
+      alert(action === 'approve' ? 'Onaylandı ✓' : 'Reddedildi ✗');
+    } catch (error) {
+      console.error('Hata:', error);
+      alert('İşlem başarısız oldu');
+    }
+  };
+
   const value = {
     clients,
     setClients,
     loading,
-    error
+    error,
+    addClient,
+    handleApproval,
   };
 
   return (

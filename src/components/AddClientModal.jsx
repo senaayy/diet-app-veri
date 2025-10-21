@@ -1,4 +1,4 @@
-// src/components/AddClientModal.jsx - Renk Paleti Uygulanmış Hali
+// src/components/AddClientModal.jsx - Renk Paleti ve Cinsiyet Alanı Uygulanmış Hali (KESİN)
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
@@ -19,6 +19,7 @@ const COLORS = {
 function AddClientModal({ onClose, onClientAdded }) {
   const [formData, setFormData] = useState({
     name: '',
+    gender: 'Belirtilmedi', // <-- BURAYA gender ALANI EKLENDİ
     height: '', 
     targetCalories: '',
     protein: '',
@@ -65,6 +66,7 @@ function AddClientModal({ onClose, onClientAdded }) {
         },
         body: JSON.stringify({
           ...formData,
+          // gender alanı formData'da zaten doğru şekilde yer alıyor
           height: parseFloat(formData.height) || null,
           targetCalories: parseInt(formData.targetCalories) || 0,
           protein: parseInt(formData.protein) || 0,
@@ -133,6 +135,25 @@ function AddClientModal({ onClose, onClientAdded }) {
                 className="w-full p-3 border border-divider rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-text-dark"
               />
             </div>
+
+            {/* Cinsiyet Seçimi - YENİ EKLENEN KISIM */}
+            <div>
+              <label className="block text-sm font-medium text-text-dark mb-1">
+                Cinsiyet
+              </label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="w-full p-3 border border-divider rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-text-dark bg-background-white"
+              >
+                <option value="Belirtilmedi">Belirtilmedi</option>
+                <option value="Kadın">Kadın</option>
+                <option value="Erkek">Erkek</option>
+                <option value="Diğer">Diğer</option>
+              </select>
+            </div>
+            {/* Cinsiyet Seçimi SONU */}
 
             <div>
               <label className="block text-sm font-medium text-text-dark mb-1">

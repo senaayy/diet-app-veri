@@ -1,4 +1,4 @@
-// prisma/schema.prisma
+// backend/prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -12,6 +12,7 @@ datasource db {
 model Danisan {
   id               Int      @id @default(autoincrement())
   name             String
+  gender           String?  // <-- YENİ EKLENEN CİNSİYET ALANI
   height           Float?   // Boy (cm)
   targetCalories   Int
   protein          Int
@@ -46,5 +47,3 @@ model WeightEntry {
 
   @@unique([danisanId, week])
 }
-
- 

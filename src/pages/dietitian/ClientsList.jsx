@@ -1,4 +1,4 @@
-// src/pages/dietitian/ClientsList.jsx - Renk Paleti Uygulanmış Hali
+// src/pages/dietitian/ClientsList.jsx - Cinsiyete Göre Avatar Renkleri Uygulanmış Hali (KESİN)
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +7,6 @@ import { ChefHat, Activity, PlusCircle, TrendingUp, TrendingDown, Search, Filter
 import AddClientModal from '../../components/AddClientModal.jsx';
 
 // tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
-// Recharts gibi kütüphanelerde doğrudan kullanabilmek için (veya diğer inline stiller için)
 const COLORS = {
   primary: '#cbf078',
   secondary: '#f8f398',
@@ -30,12 +29,12 @@ const calculateBMI = (weight, height) => {
 const getBMICategory = (bmi) => {
   if (!bmi) return { label: 'Bilinmiyor', color: 'gray' };
   
-  if (bmi < 18.5) return { label: 'Zayıf', color: 'secondary' }; // Sarı
-  if (bmi < 25) return { label: 'Normal', color: 'primary' }; // Yeşil
-  if (bmi < 30) return { label: 'Fazla Kilolu', color: 'tertiary' }; // Turuncu
-  if (bmi < 35) return { label: 'Obez (1. Derece)', color: 'error' }; // Kırmızı
-  if (bmi < 40) return { label: 'Obez (2. Derece)', color: 'error' }; // Kırmızı
-  return { label: 'Morbid Obez', color: 'error' }; // Kırmızı
+  if (bmi < 18.5) return { label: 'Zayıf', color: 'secondary' }; 
+  if (bmi < 25) return { label: 'Normal', color: 'primary' }; 
+  if (bmi < 30) return { label: 'Fazla Kilolu', color: 'tertiary' }; 
+  if (bmi < 35) return { label: 'Obez (1. Derece)', color: 'error' }; 
+  if (bmi < 40) return { label: 'Obez (2. Derece)', color: 'error' }; 
+  return { label: 'Morbid Obez', color: 'error' }; 
 };
 
 // Renk paletimize göre badge renklerini döndür
@@ -47,6 +46,16 @@ const getBadgeColor = (colorName) => {
     case 'error': return 'bg-error/20 text-error border-error/30';
     case 'gray': return 'bg-background-light text-text-medium border-divider';
     default: return 'bg-background-light text-text-medium border-divider';
+  }
+};
+
+// Cinsiyete göre avatar renk sınıfını döndüren yeni fonksiyon
+const getAvatarColorClasses = (gender) => {
+  switch (gender) {
+    case 'Kadın': return 'bg-gradient-to-br from-pink-400 to-pink-600'; // Pembemsi gradyan
+    case 'Erkek': return 'bg-gradient-to-br from-blue-400 to-blue-600'; // Maviye yakın gradyan
+    case 'Diğer': return 'bg-gradient-to-br from-purple-400 to-purple-600'; // Morumsu gradyan
+    default: return 'bg-gradient-to-br from-tertiary to-secondary'; // Varsayılan (turuncu-sarı gradyan)
   }
 };
 
@@ -67,18 +76,14 @@ function ClientsList() {
   const [filterAdherence, setFilterAdherence] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  // ✅ DÜZELTILMIŞ: Context zaten state'i güncelliyor, 
-  // bu fonksiyon sadece modal'ı kapatıyor
   const handleClientAdded = () => {
     setIsModalOpen(false);
   };
 
   // Filtreleme fonksiyonu
   const filteredClients = clients.filter(client => {
-    // İsim araması
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // BMI filtresi
     let matchesBMI = true;
     if (filterBMI !== 'all') {
       const bmi = calculateBMI(client.currentWeight, client.height);
@@ -86,7 +91,6 @@ function ClientsList() {
       matchesBMI = category.label === filterBMI;
     }
     
-    // Uyum filtresi
     let matchesAdherence = true;
     if (filterAdherence === 'high') matchesAdherence = client.adherence >= 80;
     else if (filterAdherence === 'medium') matchesAdherence = client.adherence >= 50 && client.adherence < 80;
@@ -95,12 +99,11 @@ function ClientsList() {
     return matchesSearch && matchesBMI && matchesAdherence;
   });
 
-  // ✅ Yükleniyor ve hata durumları
   if (loading) {
     return (
       <div className="bg-background-white rounded-xl shadow-sm border border-divider p-12 text-center">
         <div className="inline-block">
-          <div className="w-12 h-12 border-4 border-tertiary/50 border-t-tertiary rounded-full animate-spin mb-4"></div> {/* Spinner rengi */}
+          <div className="w-12 h-12 border-4 border-tertiary/50 border-t-tertiary rounded-full animate-spin mb-4"></div> 
           <p className="text-text-medium font-medium">Danışanlar yükleniyor...</p>
         </div>
       </div>
@@ -161,8 +164,8 @@ function ClientsList() {
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all ${
                 showFilters 
-                  ? 'bg-secondary/10 border-secondary/50 text-secondary' // Aktif filtre: Sarımsı
-                  : 'border-divider hover:bg-background-light' // Pasif filtre: Nötr
+                  ? 'bg-secondary/10 border-secondary/50 text-secondary' 
+                  : 'border-divider hover:bg-background-light'
               }`}
             >
               <Filter size={18} />
@@ -172,7 +175,7 @@ function ClientsList() {
 
           {/* Filtre Seçenekleri */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-secondary/5 rounded-lg border-2 border-divider"> {/* Filtre arka planı */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-secondary/5 rounded-lg border-2 border-divider"> 
               <div>
                 <label className="block text-sm font-semibold text-text-dark mb-2">📊 BMI Kategorisi</label>
                 <select
@@ -210,17 +213,17 @@ function ClientsList() {
             <div className="flex flex-wrap gap-2 items-center text-sm">
               <span className="text-text-medium">Aktif Filtreler:</span>
               {searchTerm && (
-                <span className="bg-tertiary/20 text-tertiary px-2 py-1 rounded-full text-xs font-medium"> {/* Turuncu */}
+                <span className="bg-tertiary/20 text-tertiary px-2 py-1 rounded-full text-xs font-medium"> 
                   Arama: {searchTerm}
                 </span>
               )}
               {filterBMI !== 'all' && (
-                <span className="bg-secondary/20 text-secondary px-2 py-1 rounded-full text-xs font-medium"> {/* Sarı */}
+                <span className="bg-secondary/20 text-secondary px-2 py-1 rounded-full text-xs font-medium"> 
                   BMI: {filterBMI}
                 </span>
               )}
               {filterAdherence !== 'all' && (
-                <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-xs font-medium"> {/* Yeşil */}
+                <span className="bg-primary/20 text-primary px-2 py-1 rounded-full text-xs font-medium"> 
                   Uyum: {filterAdherence === 'high' ? 'Yüksek' : filterAdherence === 'medium' ? 'Orta' : 'Düşük'}
                 </span>
               )}
@@ -263,7 +266,7 @@ function ClientsList() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 flex items-start gap-4">
                         {/* Avatar */}
-                        <div className="w-14 h-14 rounded-full bg-tertiary flex items-center justify-center text-background-white font-bold text-xl flex-shrink-0 shadow-md"> {/* Avatar rengi */}
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-md ${getAvatarColorClasses(clientItem.gender)}`}>
                           {clientItem.name.charAt(0).toUpperCase()}
                         </div>
                         
@@ -296,7 +299,7 @@ function ClientsList() {
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm">
                             {/* Uyum Oranı */}
                             <div className="flex items-center gap-1">
-                              <Activity size={14} className="text-primary" /> {/* Primary ikon */}
+                              <Activity size={14} className="text-primary" /> 
                               <span className="text-text-dark">
                                 <span className="font-bold text-primary">{clientItem.adherence}%</span> uyum
                               </span>
@@ -304,7 +307,7 @@ function ClientsList() {
 
                             {/* Öğün Kaydı */}
                             <div className="flex items-center gap-1">
-                              <ChefHat size={14} className="text-tertiary" /> {/* Tertiary ikon */}
+                              <ChefHat size={14} className="text-tertiary" /> 
                               <span className="text-text-dark">
                                 <span className="font-bold">{clientItem.mealsLogged}</span>/{clientItem.totalMeals} öğün
                               </span>
@@ -323,7 +326,7 @@ function ClientsList() {
                             {/* Kilo Değişimi */}
                             {weightChange && (
                               <div className={`flex items-center gap-1 font-medium ${
-                                parseFloat(weightChange) < 0 ? 'text-primary' : 'text-error' // Kilo kaybı: Yeşil, kilo alımı: Kırmızı
+                                parseFloat(weightChange) < 0 ? 'text-primary' : 'text-error' 
                               }`}>
                                 {parseFloat(weightChange) < 0 ? (
                                   <>

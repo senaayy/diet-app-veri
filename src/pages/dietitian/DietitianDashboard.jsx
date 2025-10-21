@@ -1,11 +1,13 @@
 // src/pages/dietitian/DietitianDashboard.jsx
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../../context/ClientContext';
-import { Users, Activity, BarChart3, Sparkles, Check } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Users, Activity, BarChart3, Sparkles, Check, TrendingUp, Filter } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import StatCard from '../../components/StatCard';
+import BMIFilter from '../../components/BMIFilter';
+import WeightTrackingChart from '../../components/WeightTrackingChart';
 import { DAYS } from '../../data/weeklyMenuTemplate';
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -45,23 +47,104 @@ const CustomTooltip = ({ active, payload, label }) => {
 function DietitianDashboard() {
   const navigate = useNavigate();
   const { clients } = useClients();
+  const [selectedBMICategory, setSelectedBMICategory] = useState('Tümü');
+  const [filteredClients, setFilteredClients] = useState([]);
+  const [clientCounts, setClientCounts] = useState({});
+  const [selectedClient, setSelectedClient] = useState(null);
+
+  // BMI hesaplama fonksiyonu
+  const calculateBMI = (weight, height) => {
+    if (!height || height <= 0) return null;
+    return weight / Math.pow(height / 100, 2);
+  };
+
+  // BMI kategorisi belirleme
+  const getBMICategory = (bmi) => {
+    if (!bmi) return 'Bilinmiyor';
+    if (bmi < 18.5) return 'Zayıf';
+    if (bmi < 25) return 'Normal';
+    if (bmi < 30) return 'Fazla kilolu';
+    if (bmi < 35) return 'Obez';
+    return 'Morbid obez';
+  };
+
+  // BMI bilgileri ile danışanları işle
+  const clientsWithBMI = useMemo(() => {
+    return clients.map(client => {
+      const bmi = calculateBMI(client.currentWeight, client.height);
+      return {
+        ...client,
+        bmi: bmi ? Math.round(bmi * 10) / 10 : null,
+        bmiCategory: getBMICategory(bmi)
+      };
+    });
+  }, [clients]);
+
+  // BMI kategorilerine göre filtreleme
+  useEffect(() => {
+    let filtered = clientsWithBMI;
+    
+    if (selectedBMICategory !== 'Tümü') {
+      filtered = clientsWithBMI.filter(client => client.bmiCategory === selectedBMICategory);
+    }
+    
+    setFilteredClients(filtered);
+  }, [clientsWithBMI, selectedBMICategory]);
+
+  // BMI kategorilerine göre sayıları hesapla
+  useEffect(() => {
+    const counts = {
+      total: clientsWithBMI.length,
+      zayif: clientsWithBMI.filter(c => c.bmiCategory === 'Zayıf').length,
+      normal: clientsWithBMI.filter(c => c.bmiCategory === 'Normal').length,
+      fazlaKilolu: clientsWithBMI.filter(c => c.bmiCategory === 'Fazla kilolu').length,
+      obez: clientsWithBMI.filter(c => c.bmiCategory === 'Obez').length,
+      morbidObez: clientsWithBMI.filter(c => c.bmiCategory === 'Morbid obez').length
+    };
+    setClientCounts(counts);
+  }, [clientsWithBMI]);
 
   const mealFrequencyData = useMemo(() => {
     const dailyData = {};
-    DAYS.forEach(day => { dailyData[day] = { total: 0, breakdown: {} }; });
-    clients.forEach(client => {
-      Object.keys(client.weeklyMenu).forEach(day => {
-        if (dailyData[day]) {
-          const loggedMealsCount = client.weeklyMenu[day].filter(meal => meal.status === 'completed' || meal.status === 'skipped').length;
-          if (loggedMealsCount > 0) {
-            dailyData[day].total += loggedMealsCount;
-            dailyData[day].breakdown[client.name] = loggedMealsCount;
-          }
-        }
-      });
+    
+    // Tüm günleri başlat
+    DAYS.forEach(day => { 
+      dailyData[day] = { total: 0, breakdown: {} }; 
     });
-    const shortDayNames = { monday: 'Pzt', tuesday: 'Sal', wednesday: 'Çar' };
-    return DAYS.map(day => ({ day: shortDayNames[day], meals: dailyData[day].total, breakdown: dailyData[day].breakdown }));
+    
+    // Her danışan için haftalık menüyü işle
+    clients.forEach(client => {
+      if (client.weeklyMenu && typeof client.weeklyMenu === 'object') {
+        Object.keys(client.weeklyMenu).forEach(day => {
+          if (dailyData[day] && Array.isArray(client.weeklyMenu[day])) {
+            const loggedMealsCount = client.weeklyMenu[day].filter(meal => 
+              meal.status === 'completed' || meal.status === 'skipped'
+            ).length;
+            
+            if (loggedMealsCount > 0) {
+              dailyData[day].total += loggedMealsCount;
+              dailyData[day].breakdown[client.name] = loggedMealsCount;
+            }
+          }
+        });
+      }
+    });
+    
+    const shortDayNames = { 
+      monday: 'Pzt', 
+      tuesday: 'Sal', 
+      wednesday: 'Çar',
+      thursday: 'Per',
+      friday: 'Cum',
+      saturday: 'Cmt',
+      sunday: 'Paz'
+    };
+    
+    return DAYS.map(day => ({ 
+      day: shortDayNames[day] || day, 
+      meals: dailyData[day].total, 
+      breakdown: dailyData[day].breakdown 
+    }));
   }, [clients]);
 
   const totalClients = clients.length;
@@ -74,12 +157,15 @@ function DietitianDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* İstatistik Kartları - En Üstte */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users} title="Toplam Danışan" value={totalClients} onClick={() => navigate('/dietitian/clients')} color="bg-blue-500" />
         <StatCard icon={Activity} title="Uyum Oranı" value={`${avgAdherence}%`} color="bg-green-500" />
         <StatCard icon={Sparkles} title="AI Kullanımı" value={totalAiUsage} color="bg-purple-500" />
         <StatCard icon={Check} title="Onay Bekleyen" value={pendingApprovalCount} onClick={() => navigate('/dietitian/approvals')} color="bg-red-500" />
       </div>
+
+      {/* Grafikler - İstatistik Kartlarının Hemen Altında */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Haftalık Öğün Takibi</h3>
@@ -96,7 +182,6 @@ function DietitianDashboard() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Danışan AI Kullanım Raporu</h3>
           <ResponsiveContainer width="100%" height={200}>
-            {/* Bu grafik 'aiUsageData'yı kullandığı için zaten dinamik */}
             <BarChart data={aiUsageData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
@@ -107,6 +192,76 @@ function DietitianDashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* BMI Filtreleme - En Altta */}
+      <BMIFilter 
+        onFilterChange={setSelectedBMICategory}
+        selectedCategory={selectedBMICategory}
+        clientCounts={clientCounts}
+      />
+
+      {/* Filtrelenmiş Danışan Listesi */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">
+            {selectedBMICategory === 'Tümü' ? 'Tüm Danışanlar' : `${selectedBMICategory} Danışanlar`}
+          </h3>
+          <span className="text-sm text-gray-500">{filteredClients.length} danışan</span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredClients.map((client) => (
+            <div 
+              key={client.id}
+              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => setSelectedClient(client)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-gray-800">{client.name}</h4>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  client.bmiCategory === 'Normal' ? 'bg-green-100 text-green-700' :
+                  client.bmiCategory === 'Zayıf' ? 'bg-blue-100 text-blue-700' :
+                  client.bmiCategory === 'Fazla kilolu' ? 'bg-yellow-100 text-yellow-700' :
+                  client.bmiCategory === 'Obez' ? 'bg-orange-100 text-orange-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {client.bmiCategory}
+                </span>
+              </div>
+              
+              <div className="space-y-1 text-sm text-gray-600">
+                <p>Kilo: {client.currentWeight} kg</p>
+                <p>Hedef: {client.targetWeight} kg</p>
+                {client.bmi && <p>BMI: {client.bmi}</p>}
+                <p>Uyum: {client.adherence}%</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Kilo Takibi Grafiği */}
+      {selectedClient && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {selectedClient.name} - Kilo Takibi
+            </h3>
+            <button
+              onClick={() => setSelectedClient(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          <WeightTrackingChart 
+            clientId={selectedClient.id}
+            clientName={selectedClient.name}
+            targetWeight={selectedClient.targetWeight}
+            height={selectedClient.height}
+          />
+        </div>
+      )}
     </div>
   );
 }

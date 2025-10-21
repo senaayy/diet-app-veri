@@ -12,7 +12,7 @@ datasource db {
 model Danisan {
   id               Int      @id @default(autoincrement())
   name             String
-  height           Float?   // Boy (cm) - YENİ ALAN
+  height           Float?   // Boy (cm)
   targetCalories   Int
   protein          Int
   carbs            Int
@@ -27,9 +27,24 @@ model Danisan {
   totalMeals       Int
   aiUsageCount     Int      @default(0)
   weeklyMenu       Json?    @default("{}")
-  pendingApprovals Json?    // <-- EKSİK OLAN BU SATIRI EKLE
+  pendingApprovals Json?
+  weightEntries    WeightEntry[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model WeightEntry {
+  id        Int      @id @default(autoincrement())
+  danisanId Int
+  weight    Float
+  week      Int
+  date      DateTime @default(now())
+  notes     String?
+  danisan   Danisan  @relation(fields: [danisanId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([danisanId, week])
 }
 
  

@@ -1,13 +1,15 @@
 // src/components/WeeklyMenuTracker.jsx - TAMAMEN DÜZELTILMIŞ
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClients } from '../context/ClientContext';
-import { PlusCircle, ChefHat, Sparkles, ShoppingBag, Check, X, Trash2 } from 'lucide-react';
+import { PlusCircle, ChefHat, Sparkles, ShoppingBag, Check, X, Trash2, TrendingUp, Activity, Flame } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import AddMealModal from './AddMealModal.jsx';
 import QuickIngredientsModal from './QuickIngredientsModal.jsx';
 import AIAlternativeModal from './AIAlternativeModal.jsx';
 import ShoppingListModal from './ShoppingListModal.jsx';
+import WeightTrackingChart from './WeightTrackingChart.jsx';
 import { DAY_NAMES, DAYS } from '../data/weeklyMenuTemplate';
 
 function WeeklyMenuTracker() {
@@ -205,6 +207,45 @@ function WeeklyMenuTracker() {
   const currentDayMeals = client?.weeklyMenu?.[selectedDay] || [];
   const totalCalories = currentDayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
 
+  // Haftalık istatistikleri hesapla
+  const weeklyStats = useMemo(() => {
+    let totalMeals = 0;
+    let completedMeals = 0;
+    let skippedMeals = 0;
+    let aiChanges = 0;
+
+    DAYS.forEach(day => {
+      const dayMeals = client?.weeklyMenu?.[day] || [];
+      totalMeals += dayMeals.length;
+      
+      dayMeals.forEach(meal => {
+        if (meal.status === 'completed') completedMeals++;
+        if (meal.status === 'skipped') skippedMeals++;
+        if (meal.aiModified) aiChanges++;
+      });
+    });
+
+    return {
+      totalMeals,
+      completedMeals,
+      skippedMeals,
+      aiChanges
+    };
+  }, [client?.weeklyMenu]);
+
+  // Kilo takibi grafik verisi
+  const weightChartData = useMemo(() => {
+    if (!client?.weightEntries || client.weightEntries.length === 0) {
+      return [];
+    }
+
+    return client.weightEntries.map(entry => ({
+      week: `Hafta ${entry.week}`,
+      weight: entry.weight,
+      date: new Date(entry.date).toLocaleDateString('tr-TR')
+    }));
+  }, [client?.weightEntries]);
+
   return (
     <>
       {/* Modaller */}
@@ -257,6 +298,57 @@ function WeeklyMenuTracker() {
             </div>
           </div>
         </div>
+
+        {/* İstatistik Kartları */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <ChefHat className="text-blue-600" size={20} />
+              </div>
+              <div>
+                <div className="text-xs text-gray-600">Toplam Öğün</div>
+                <div className="text-xl font-bold text-gray-800">{weeklyStats.totalMeals}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Check className="text-green-600" size={20} />
+              </div>
+              <div>
+                <div className="text-xs text-gray-600">Tamamlanan</div>
+                <div className="text-xl font-bold text-gray-800">{weeklyStats.completedMeals}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <X className="text-red-600" size={20} />
+              </div>
+              <div>
+                <div className="text-xs text-gray-600">Atlanan</div>
+                <div className="text-xl font-bold text-gray-800">{weeklyStats.skippedMeals}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Sparkles className="text-purple-600" size={20} />
+              </div>
+              <div>
+                <div className="text-xs text-gray-600">AI Değişiklik</div>
+                <div className="text-xl font-bold text-gray-800">{weeklyStats.aiChanges}</div>
+              </div>
+            </div>
+          </div>
+        </div>
         
         {/* Gün Seçici ve Butonlar */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -266,7 +358,7 @@ function WeeklyMenuTracker() {
                 <button 
                   key={day} 
                   onClick={() => setSelectedDay(day)} 
-                  className={`px-6 py-3 rounded-lg font-semibold whitespace-nowrap transition-all ${
+                  className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-all text-sm ${
                     selectedDay === day 
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -291,6 +383,53 @@ function WeeklyMenuTracker() {
             <ShoppingBag size={18} />
             Alışveriş Listesi Oluştur
           </button>
+        </div>
+
+        {/* Kilo Takibi Grafiği */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Kilo Takibi</h3>
+          {weightChartData.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weightChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="week" 
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis 
+                    domain={['dataMin - 2', 'dataMax + 2']}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => [`${value} kg`, 'Kilo']}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0]) {
+                        return `${label} - ${payload[0].payload.date}`;
+                      }
+                      return label;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="weight" 
+                    stroke="#3B82F6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
+                    activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500">Henüz kilo verisi bulunmuyor</p>
+                <p className="text-sm text-gray-400">İlk kilo girişini yaparak takibe başlayın</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Öğünler */}

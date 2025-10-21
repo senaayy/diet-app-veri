@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { ChefHat, Sparkles, Apple, Clock, DollarSign, AlertCircle, Plus, X, Check, TrendingUp, Activity, Flame } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import WeightTrackingChart from '../components/WeightTrackingChart';
 
 // Dışarıdan import edilen veriler
 import INITIAL_RECIPES from '../data/recipes';
@@ -70,12 +71,6 @@ function ClientApp({ client, onBack }) { // Bileşen adı ClientApp olarak deği
   };
 
   const filteredRecipes = filterRecipes();
-
-  // Progress data
-  const progressData = client.weeklyProgress.map((weight, i) => ({
-    day: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][i],
-    weight
-  }));
 
   return (
     <div className="space-y-6">
@@ -147,33 +142,12 @@ function ClientApp({ client, onBack }) { // Bileşen adı ClientApp olarak deği
       </div>
 
       {/* Weight Progress Chart */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Haftalık Kilo Takibi</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={progressData}>
-            <defs>
-              <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="day" stroke="#9ca3af" fontSize={12} />
-            <YAxis domain={['dataMin - 1', 'dataMax + 1']} stroke="#9ca3af" fontSize={12} />
-            <Tooltip 
-              contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
-              formatter={(value) => [`${value} kg`, 'Kilo']}
-            />
-            <Area 
-              type="monotone" 
-              dataKey="weight" 
-              stroke="#3b82f6" 
-              strokeWidth={2}
-              fill="url(#colorWeight)"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      <WeightTrackingChart 
+        clientId={client.id}
+        clientName={client.name}
+        targetWeight={client.targetWeight}
+        height={client.height}
+      />
 
       {/* Meal Planning Section */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">

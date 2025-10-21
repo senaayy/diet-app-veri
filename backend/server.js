@@ -18,16 +18,87 @@ app.get('/', (req, res) => {
   res.send('Diyet App Backend API Çalışıyor!');
 });
 
-// Tüm danışanları getir
+// BMI hesaplama fonksiyonu
+const calculateBMI = (weight, height) => {
+  if (!height || height <= 0) return null;
+  return weight / Math.pow(height / 100, 2);
+};
+
+// BMI kategorisi belirleme
+const getBMICategory = (bmi) => {
+  if (!bmi) return 'Bilinmiyor';
+  if (bmi < 18.5) return 'Zayıf';
+  if (bmi < 25) return 'Normal';
+  if (bmi < 30) return 'Fazla kilolu';
+  if (bmi < 35) return 'Obez';
+  return 'Morbid obez';
+};
+
+// Tüm danışanları getir (BMI bilgileri ile)
 app.get('/api/clients', async (req, res) => {
   try {
     const clients = await prisma.danisan.findMany({ 
+      include: {
+        weightEntries: {
+          orderBy: { week: 'desc' },
+          take: 1
+        }
+      },
       orderBy: { createdAt: 'desc' } 
     });
-    res.json(clients);
+    
+    // BMI bilgilerini ekle
+    const clientsWithBMI = clients.map(client => {
+      const bmi = calculateBMI(client.currentWeight, client.height);
+      return {
+        ...client,
+        bmi: bmi ? Math.round(bmi * 10) / 10 : null,
+        bmiCategory: getBMICategory(bmi)
+      };
+    });
+    
+    res.json(clientsWithBMI);
   } catch (error) {
     console.error('Hata:', error);
     res.status(500).json({ error: 'Danışanlar getirilirken bir hata oluştu.' });
+  }
+});
+
+// BMI kategorisine göre filtreleme
+app.get('/api/clients/filter', async (req, res) => {
+  try {
+    const { category } = req.query;
+    
+    const clients = await prisma.danisan.findMany({ 
+      include: {
+        weightEntries: {
+          orderBy: { week: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { createdAt: 'desc' } 
+    });
+    
+    // BMI bilgilerini ekle ve filtrele
+    const clientsWithBMI = clients.map(client => {
+      const bmi = calculateBMI(client.currentWeight, client.height);
+      return {
+        ...client,
+        bmi: bmi ? Math.round(bmi * 10) / 10 : null,
+        bmiCategory: getBMICategory(bmi)
+      };
+    });
+    
+    let filteredClients = clientsWithBMI;
+    
+    if (category && category !== 'Tümü') {
+      filteredClients = clientsWithBMI.filter(client => client.bmiCategory === category);
+    }
+    
+    res.json(filteredClients);
+  } catch (error) {
+    console.error('Hata:', error);
+    res.status(500).json({ error: 'Danışanlar filtrelenirken bir hata oluştu.' });
   }
 });
 
@@ -135,6 +206,94 @@ app.patch('/api/clients/:clientId', async (req, res) => {
   } catch (error) {
     console.error('Danışan güncelleme hatası:', error);
     res.status(500).json({ error: 'Danışan güncellenirken bir hata oluştu.' });
+  }
+});
+
+// Haftalık kilo girişi - Yeni kayıt
+app.post('/api/clients/:clientId/weight', async (req, res) => {
+  const { clientId } = req.params;
+  const { weight, week, notes } = req.body;
+  
+  try {
+    const weightEntry = await prisma.weightEntry.upsert({
+      where: {
+        danisanId_week: {
+          danisanId: parseInt(clientId),
+          week: parseInt(week)
+        }
+      },
+      update: {
+        weight: parseFloat(weight),
+        notes: notes || null,
+        updatedAt: new Date()
+      },
+      create: {
+        danisanId: parseInt(clientId),
+        weight: parseFloat(weight),
+        week: parseInt(week),
+        notes: notes || null
+      }
+    });
+    
+    // Danışanın currentWeight'ini güncelle
+    await prisma.danisan.update({
+      where: { id: parseInt(clientId) },
+      data: { currentWeight: parseFloat(weight) }
+    });
+    
+    res.json(weightEntry);
+  } catch (error) {
+    console.error('Kilo girişi hatası:', error);
+    res.status(500).json({ error: 'Kilo girişi yapılırken bir hata oluştu.' });
+  }
+});
+
+// Danışanın kilo geçmişini getir
+app.get('/api/clients/:clientId/weight-history', async (req, res) => {
+  const { clientId } = req.params;
+  
+  try {
+    const weightHistory = await prisma.weightEntry.findMany({
+      where: { danisanId: parseInt(clientId) },
+      orderBy: { week: 'asc' }
+    });
+    
+    res.json(weightHistory);
+  } catch (error) {
+    console.error('Kilo geçmişi hatası:', error);
+    res.status(500).json({ error: 'Kilo geçmişi getirilirken bir hata oluştu.' });
+  }
+});
+
+// Tek danışan detayı (kilo geçmişi ile)
+app.get('/api/clients/:clientId', async (req, res) => {
+  const { clientId } = req.params;
+  
+  try {
+    const client = await prisma.danisan.findUnique({
+      where: { id: parseInt(clientId) },
+      include: {
+        weightEntries: {
+          orderBy: { week: 'asc' }
+        }
+      }
+    });
+    
+    if (!client) {
+      return res.status(404).json({ error: 'Danışan bulunamadı.' });
+    }
+    
+    const bmi = calculateBMI(client.currentWeight, client.height);
+    const clientWithBMI = {
+      ...client,
+      bmi: bmi ? Math.round(bmi * 10) / 10 : null,
+      bmiCategory: getBMICategory(bmi)
+    };
+    
+    res.json(clientWithBMI);
+  } catch (error) {
+    console.error('Danışan detayı hatası:', error);
+    res.status(500).json({ error: 'Danışan detayı getirilirken bir hata oluştu.' });
   }
 });
 

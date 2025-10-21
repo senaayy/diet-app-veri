@@ -2,11 +2,15 @@
 import INITIAL_RECIPES from './recipes';
 
 // DAYS ve DAY_NAMES'i NAMED EXPORT olarak dışa aktarıyoruz
-export const DAYS = ['monday', 'tuesday', 'wednesday']; 
+export const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']; 
 export const DAY_NAMES = { 
   monday: 'Pazartesi', 
   tuesday: 'Salı', 
-  wednesday: 'Çarşamba' 
+  wednesday: 'Çarşamba',
+  thursday: 'Perşembe',
+  friday: 'Cuma',
+  saturday: 'Cumartesi',
+  sunday: 'Pazar'
 };
 
 const WEEKLY_MENU_TEMPLATE = {

@@ -1,4 +1,4 @@
-// src/context/ClientContext.jsx - Nihai Hali
+// src/context/ClientContext.jsx - Düzeltilmiş Hali
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
@@ -22,11 +22,11 @@ const parseJsonSafe = (data, defaultValue) => {
 };
 
 export const ClientProvider = ({ children }) => {
-  const [clients, setClients] = useState([]); // Diyetisyenin tüm danışanlarını tutar
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Tüm danışanları fetch et (Diyetisyen için)
+  // ✅ Tüm danışanları fetch et
   const fetchAllClients = async () => {
     try {
       setLoading(true);
@@ -54,8 +54,6 @@ export const ClientProvider = ({ children }) => {
     }
   };
 
-  // useEffect içinde tüm danışanları çekelim (Diyetisyen girişi için ideal)
-  // Bu, uygulama yüklendiğinde diyetisyenin listesini doldurur
   useEffect(() => {
     fetchAllClients();
   }, []); 
@@ -82,7 +80,7 @@ export const ClientProvider = ({ children }) => {
         notifications: [],
       };
 
-      setClients(prev => [formattedClient, ...prev]); // Global listeye ekle
+      setClients(prev => [formattedClient, ...prev]);
       return formattedClient; 
     } catch (err) {
       console.error(err);
@@ -91,7 +89,7 @@ export const ClientProvider = ({ children }) => {
     }
   };
 
-  // ✅ Onay işlemleri (Diyetisyen tarafından kullanılır)
+  // ✅ Onay işlemleri
   const handleApproval = async (clientId, approvalId, action) => {
     try {
       const client = clients.find(c => c.id === clientId);
@@ -101,7 +99,7 @@ export const ClientProvider = ({ children }) => {
       if (!approval) return;
 
       const updatedApprovals = client.pendingApprovals.filter(a => a.id !== approvalId);
-      let updatedWeeklyMenu = { ...client.weeklyMenu };
+      let updatedWeeklyMenu = JSON.parse(JSON.stringify(client.weeklyMenu)); // DEEP COPY
 
       if (action === 'approve') {
         const { day, mealIndex, suggestedAlternative, originalMeal } = approval; 
@@ -130,20 +128,24 @@ export const ClientProvider = ({ children }) => {
 
       if (!response.ok) throw new Error('Onay işlemi başarısız');
 
-      const updatedClientData = await response.json(); 
+      const updatedClientData = await response.json();
 
-      setClients(prev => prev.map(c => // Global clients listesini güncelle
-        c.id === clientId
-          ? {
-              ...c,
-              ...updatedClientData, 
-              allergens: parseJsonSafe(updatedClientData.allergens, []),
-              weeklyProgress: parseJsonSafe(updatedClientData.weeklyProgress, []),
-              weeklyMenu: parseJsonSafe(updatedClientData.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
-              pendingApprovals: parseJsonSafe(updatedClientData.pendingApprovals, []),
-            }
-          : c
-      ));
+      // ✅ YENİ REFERANS OLUŞTUR
+      setClients(prev => {
+        const newClients = prev.map(c => 
+          c.id === clientId
+            ? {
+                ...c,
+                ...updatedClientData,
+                allergens: parseJsonSafe(updatedClientData.allergens, []),
+                weeklyProgress: parseJsonSafe(updatedClientData.weeklyProgress, []),
+                weeklyMenu: parseJsonSafe(updatedClientData.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
+                pendingApprovals: parseJsonSafe(updatedClientData.pendingApprovals, []),
+              }
+            : c
+        );
+        return [...newClients]; // YENİ ARRAY REFERANSI
+      });
 
       alert(action === 'approve' ? 'Onaylandı ✓' : 'Reddedildi ✗');
       return updatedClientData; 
@@ -154,7 +156,7 @@ export const ClientProvider = ({ children }) => {
     }
   };
 
-  // ✅ Danışan verilerini güncelle (Hem diyetisyen hem de danışan tarafından kullanılabilir)
+  // ✅ DÜZELTME: Danışan verilerini güncelle - YENİ REFERANS OLUŞTUR
   const updateClientData = async (clientId, updatedData) => {
     try {
       const response = await fetch(`http://localhost:3001/api/clients/${clientId}`, {
@@ -167,18 +169,22 @@ export const ClientProvider = ({ children }) => {
 
       const savedClient = await response.json();
 
-      setClients(prevClients => prevClients.map(c => // Global clients listesini güncelle
-        c.id === clientId
-          ? {
-              ...c,
-              ...savedClient,
-              allergens: parseJsonSafe(savedClient.allergens, []),
-              weeklyProgress: parseJsonSafe(savedClient.weeklyProgress, []),
-              weeklyMenu: parseJsonSafe(savedClient.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
-              pendingApprovals: parseJsonSafe(savedClient.pendingApprovals, []),
-            }
-          : c
-      ));
+      // ✅ YENİ REFERANS OLUŞTUR - Bu sayede React re-render olacak
+      setClients(prevClients => {
+        const newClients = prevClients.map(c => 
+          c.id === parseInt(clientId)
+            ? {
+                ...c,
+                ...savedClient,
+                allergens: parseJsonSafe(savedClient.allergens, []),
+                weeklyProgress: parseJsonSafe(savedClient.weeklyProgress, []),
+                weeklyMenu: parseJsonSafe(savedClient.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
+                pendingApprovals: parseJsonSafe(savedClient.pendingApprovals, []),
+              }
+            : c
+        );
+        return [...newClients]; // YENİ ARRAY REFERANSI - ÇOK ÖNEMLİ!
+      });
 
       return savedClient; 
     } catch (error) {

@@ -1,9 +1,9 @@
-// src/components/AddClientModal.jsx - Renk Paleti ve Cinsiyet Alanı Uygulanmış Hali (KESİN)
+// src/components/AddClientModal.jsx - Context Kullanımlı Hali
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useClients } from '../context/ClientContext'; // ✅ EKLEME
 
-// tailwind.config.js dosyanızdaki renkleri burada tekrar tanımlıyoruz
 const COLORS = {
   primary: '#cbf078',
   secondary: '#f8f398',
@@ -16,10 +16,12 @@ const COLORS = {
   divider: '#e0e0e0',
 };
 
-function AddClientModal({ onClose, onClientAdded }) {
+function AddClientModal({ onClose }) { // ✅ onClientAdded kaldırıldı
+  const { addClient } = useClients(); // ✅ Context'ten addClient al
+  
   const [formData, setFormData] = useState({
     name: '',
-    gender: 'Belirtilmedi', // <-- BURAYA gender ALANI EKLENDİ
+    gender: 'Belirtilmedi',
     height: '', 
     targetCalories: '',
     protein: '',
@@ -59,41 +61,29 @@ function AddClientModal({ onClose, onClientAdded }) {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:3001/api/clients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          // gender alanı formData'da zaten doğru şekilde yer alıyor
-          height: parseFloat(formData.height) || null,
-          targetCalories: parseInt(formData.targetCalories) || 0,
-          protein: parseInt(formData.protein) || 0,
-          carbs: parseInt(formData.carbs) || 0,
-          fat: parseInt(formData.fat) || 0,
-          currentWeight: parseFloat(formData.currentWeight) || 0,
-          targetWeight: parseFloat(formData.targetWeight) || 0,
-          startWeight: parseFloat(formData.startWeight) || 0,
-          allergens: JSON.stringify(formData.allergens),
-          weeklyProgress: JSON.stringify([]),
-          adherence: 0,
-          mealsLogged: 0,
-          totalMeals: 0,
-        }),
+      // ✅ Context'teki addClient fonksiyonunu kullan
+      await addClient({
+        ...formData,
+        height: parseFloat(formData.height) || null,
+        targetCalories: parseInt(formData.targetCalories) || 0,
+        protein: parseInt(formData.protein) || 0,
+        carbs: parseInt(formData.carbs) || 0,
+        fat: parseInt(formData.fat) || 0,
+        currentWeight: parseFloat(formData.currentWeight) || 0,
+        targetWeight: parseFloat(formData.targetWeight) || 0,
+        startWeight: parseFloat(formData.startWeight) || 0,
+        allergens: JSON.stringify(formData.allergens),
+        weeklyProgress: JSON.stringify([]),
+        adherence: 0,
+        mealsLogged: 0,
+        totalMeals: 0,
       });
-
-      if (response.ok) {
-        const newClient = await response.json();
-        onClientAdded(newClient);
-        onClose();
-      } else {
-        const errorData = await response.json();
-        alert(`Danışan eklenirken bir hata oluştu: ${errorData.error || 'Bilinmeyen hata'}`);
-      }
+      
+      // ✅ Başarılı olduysa modal'ı kapat
+      onClose();
     } catch (error) {
       console.error('Hata:', error);
-      alert('Bağlantı hatası oluştu. Backend sunucusunun çalıştığından emin olun.');
+      // Hata zaten Context içinde alert ile gösteriliyor
     }
   };
 
@@ -136,7 +126,6 @@ function AddClientModal({ onClose, onClientAdded }) {
               />
             </div>
 
-            {/* Cinsiyet Seçimi - YENİ EKLENEN KISIM */}
             <div>
               <label className="block text-sm font-medium text-text-dark mb-1">
                 Cinsiyet
@@ -153,7 +142,6 @@ function AddClientModal({ onClose, onClientAdded }) {
                 <option value="Diğer">Diğer</option>
               </select>
             </div>
-            {/* Cinsiyet Seçimi SONU */}
 
             <div>
               <label className="block text-sm font-medium text-text-dark mb-1">

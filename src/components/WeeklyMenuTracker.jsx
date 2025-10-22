@@ -28,8 +28,7 @@ function WeeklyMenuTracker() {
   const { clientId } = useParams();
   const navigate = useNavigate();
   const { clients, updateClientData: globalUpdateClientData } = useClients(); 
-  const client = clients.find(c => c.id === parseInt(clientId)); 
-
+  
   const [selectedDay, setSelectedDay] = useState('monday');
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -37,10 +36,34 @@ function WeeklyMenuTracker() {
   const [showShoppingListModal, setShowShoppingListModal] = useState(false); 
   const [selectedMealItem, setSelectedMealItem] = useState(null);
 
-  useEffect(() => {
-    // client objesi güncel olduğu için burada ek bir işlem gerekmez.
-  }, [client]);
+  const client = clients.find(c => c.id === parseInt(clientId));
 
+  const weeklyStats = useMemo(() => { 
+    if (!client) return { totalMeals: 0, completedMeals: 0, skippedMeals: 0, aiChanges: 0 };
+    
+    let totalMeals = 0;
+    let completedMeals = 0;
+    let skippedMeals = 0;
+    let aiChanges = 0;
+
+    DAYS.forEach(day => {
+      const dayMeals = client?.weeklyMenu?.[day] || [];
+      totalMeals += dayMeals.length;
+      
+      dayMeals.forEach(meal => {
+        if (meal.status === 'completed') completedMeals++;
+        if (meal.status === 'skipped') skippedMeals++;
+        if (meal.aiModified) aiChanges++;
+      });
+    });
+
+    return {
+      totalMeals,
+      completedMeals,
+      skippedMeals,
+      aiChanges
+    };
+  }, [client]);
 
   const saveMenuToDb = async (updatedMenu) => {
     try {
@@ -124,11 +147,22 @@ function WeeklyMenuTracker() {
 
     const updatedApprovals = [...(client.pendingApprovals || []), newApproval];
     
-    globalUpdateClientData(clientId, { pendingApprovals: updatedApprovals });
+    await globalUpdateClientData(clientId, { pendingApprovals: updatedApprovals });
     
     alert("✅ Alternatif öneri diyetisyeninize onay için iletildi!");
     setShowAIModal(false);
     setShowIngredientsModal(false);
+  };
+
+  // ✅ YENİ: Öğün durumu güncelleme fonksiyonu
+  const handleMealStatus = async (mealIndex, status) => {
+    const currentMenu = client?.weeklyMenu || {};
+    const updatedMenu = JSON.parse(JSON.stringify(currentMenu));
+    
+    if (updatedMenu[selectedDay] && updatedMenu[selectedDay][mealIndex]) {
+      updatedMenu[selectedDay][mealIndex].status = status;
+      await saveMenuToDb(updatedMenu);
+    }
   };
 
   if (!client) {
@@ -148,32 +182,6 @@ function WeeklyMenuTracker() {
 
   const currentDayMeals = client?.weeklyMenu?.[selectedDay] || [];
   const totalCalories = currentDayMeals.reduce((sum, meal) => sum + (meal.calories || 0), 0);
-
-  const weeklyStats = useMemo(() => { 
-    let totalMeals = 0;
-    let completedMeals = 0;
-    let skippedMeals = 0;
-    let aiChanges = 0;
-
-    DAYS.forEach(day => {
-      const dayMeals = client?.weeklyMenu?.[day] || [];
-      totalMeals += dayMeals.length;
-      
-      dayMeals.forEach(meal => {
-        if (meal.status === 'completed') completedMeals++;
-        if (meal.status === 'skipped') skippedMeals++;
-        if (meal.aiModified) aiChanges++;
-      });
-    });
-
-    return {
-      totalMeals,
-      completedMeals,
-      skippedMeals,
-      aiChanges
-    };
-  }, [client?.weeklyMenu]); 
-
   const weightChartData = client.weightEntries?.map(entry => ({
     week: `Hafta ${entry.week}`,
     weight: entry.weight,
@@ -418,62 +426,16 @@ function WeeklyMenuTracker() {
                     <Trash2 size={20} />
                   </button>
                 </div>
-                
-                {/* Butonlar (Diyetisyen Görmemeli, Sadece Statusu Görmeli) */}
-                {/* Bu butonları Diyetisyen tarafında kaldırıyoruz. Danışan işaretleyecek. */}
-                {/* <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleMealStatus(index, 'completed')} 
-                        className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                          mealItem.status === 'completed' 
-                            ? 'bg-primary text-text-dark' 
-                            : 'bg-primary/20 text-primary hover:bg-primary/30'
-                        }`}
-                      >
-                        <Check size={18} />
-                        Tamamlandı
-                      </button>
-                      <button 
-                        onClick={() => handleMealStatus(index, 'skipped')} 
-                        className={`flex-1 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                          mealItem.status === 'skipped' 
-                            ? 'bg-error text-background-white' 
-                            : 'bg-error/20 text-error hover:bg-error/30'
-                        }`}
-                      >
-                        <X size={18} />
-                        Atladım
-                      </button>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleRequestAlternative(index)} 
-                        className="flex-1 bg-gradient-to-r from-secondary to-tertiary text-text-dark py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:from-secondary/90 hover:to-tertiary/90"
-                      >
-                        <Sparkles size={18} />
-                        Alternatif İste
-                      </button>
-                      <button 
-                        onClick={() => handleRequestIngredients(index)} 
-                        className="flex-1 bg-gradient-to-r from-tertiary to-error text-background-white py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:from-tertiary/90 hover:to-error/90"
-                      >
-                        <ChefHat size={18} />
-                        Elimde Bunlar Var
-                      </button>
-                    </div>
-                  </div> */}
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-10 text-text-medium bg-background-white rounded-xl border-2 border-dashed border-divider">
-                <p className="font-semibold">Bu gün için henüz öğün planlanmamış.</p>
-                <p className="text-sm mt-1">Diyetisyeniniz ile iletişime geçin.</p>
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="text-center py-10 text-text-medium bg-background-white rounded-xl border-2 border-dashed border-divider">
+              <p className="font-semibold">Bu gün için henüz öğün planlanmamış.</p>
+              <p className="text-sm mt-1">Diyetisyeniniz ile iletişime geçin.</p>
+            </div>
+          )}
         </div>
-      
+      </div>
     </>
   );
 }

@@ -1,4 +1,4 @@
-// src/context/ClientContext.jsx - Senkronizasyon için Güncellenmiş Hali
+// src/context/ClientContext.jsx - Nihai Hali
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
@@ -27,7 +27,6 @@ export const ClientProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // ✅ Tüm danışanları fetch et (Diyetisyen için)
-  // Bu fonksiyonu Diyetisyen'in ClientsList ve Dashboard'u kullanacak
   const fetchAllClients = async () => {
     try {
       setLoading(true);
@@ -56,12 +55,10 @@ export const ClientProvider = ({ children }) => {
   };
 
   // useEffect içinde tüm danışanları çekelim (Diyetisyen girişi için ideal)
+  // Bu, uygulama yüklendiğinde diyetisyenin listesini doldurur
   useEffect(() => {
-    // Sadece diyetisyen rolündeyseniz veya genel bir liste gerekiyorsa çağırın
-    // Danışan girişi için ClientMenuView kendi fetchClientData'sını kullanacak.
-    // Şimdilik her zaman çekelim, sonra rol bazlı optimize edebiliriz.
     fetchAllClients();
-  }, []); // Bağımlılıkları boş bıraktık, sayfa yüklendiğinde bir kez çeksin
+  }, []); 
 
   // ✅ Yeni danışan ekle
   const addClient = async (newClient) => {
@@ -85,8 +82,8 @@ export const ClientProvider = ({ children }) => {
         notifications: [],
       };
 
-      setClients(prev => [formattedClient, ...prev]);
-      return formattedClient; // Yeni danışanı döndür
+      setClients(prev => [formattedClient, ...prev]); // Global listeye ekle
+      return formattedClient; 
     } catch (err) {
       console.error(err);
       alert(err.message);
@@ -135,7 +132,7 @@ export const ClientProvider = ({ children }) => {
 
       const updatedClientData = await response.json(); 
 
-      setClients(prev => prev.map(c =>
+      setClients(prev => prev.map(c => // Global clients listesini güncelle
         c.id === clientId
           ? {
               ...c,
@@ -149,7 +146,7 @@ export const ClientProvider = ({ children }) => {
       ));
 
       alert(action === 'approve' ? 'Onaylandı ✓' : 'Reddedildi ✗');
-      return updatedClientData; // Güncel danışan verisini döndür
+      return updatedClientData; 
     } catch (error) {
       console.error('Hata:', error);
       alert('İşlem başarısız oldu: ' + error.message);
@@ -183,7 +180,7 @@ export const ClientProvider = ({ children }) => {
           : c
       ));
 
-      return savedClient; // Güncellenmiş danışan verisini döndür
+      return savedClient; 
     } catch (error) {
       console.error('Güncelleme hatası:', error);
       alert("Hata: " + error.message);
@@ -193,13 +190,13 @@ export const ClientProvider = ({ children }) => {
 
   const value = {
     clients,
-    setClients, // Eğer ClientsList'te direkt state güncelleme ihtiyacı olursa
+    setClients, 
     loading,
     error,
     addClient,
     handleApproval,
     updateClientData,
-    fetchAllClients, // Diyetisyen tarafında manuel refresh için eklendi
+    fetchAllClients, 
   };
 
   return (

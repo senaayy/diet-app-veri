@@ -1,4 +1,4 @@
-// src/components/WeightTrackingChart.jsx - Renk Paleti Uygulanmış Hali
+// src/components/WeightTrackingChart.jsx - Tüm Haftaları Gösterecek Şekilde Güncellendi
 
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -17,25 +17,32 @@ const COLORS = {
   divider: '#e0e0e0',
 };
 
-const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineColor }) => {
+const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, gender, lineColor }) => { // gender prop'u eklendi
   const [weightHistory, setWeightHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState(1);
+  const [lastWeight, setLastWeight] = useState(0); // En son kiloyu tutmak için
 
   useEffect(() => {
     fetchWeightHistory();
-  }, [clientId]);
+  }, [clientId, gender]); // gender değiştiğinde de fetch et
 
   const fetchWeightHistory = async () => {
     try {
+      // Sadece kilo geçmişini çeken endpoint'i kullandık
       const response = await fetch(`http://localhost:3001/api/clients/${clientId}/weight-history`);
       const data = await response.json();
+      
       setWeightHistory(data);
       
-      // Mevcut haftayı belirle
+      // Mevcut haftayı ve en son kiloyu belirle
       if (data.length > 0) {
         const maxWeek = Math.max(...data.map(entry => entry.week));
         setCurrentWeek(maxWeek + 1);
+        setLastWeight(data[data.length - 1].weight); // En son eklenen kiloyu al
+      } else {
+        setCurrentWeek(1);
+        setLastWeight(0);
       }
     } catch (error) {
       console.error('Kilo geçmişi yüklenirken hata:', error);
@@ -55,8 +62,8 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineC
       });
 
       if (response.ok) {
-        await fetchWeightHistory();
-        setCurrentWeek(week + 1);
+        await fetchWeightHistory(); // Yeni girişten sonra tüm geçmişi yeniden çek
+        // currentWeek ve lastWeight fetchHistory içinde güncellenecek
       }
     } catch (error) {
       console.error('Kilo girişi hatası:', error);
@@ -76,23 +83,32 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineC
     return weight / Math.pow(height / 100, 2);
   };
 
-  const getBMICategory = (bmi) => {
+  // getBMICategory fonksiyonu - gender parametresi eklendi
+  const getBMICategory = (bmi, gender) => { 
     if (!bmi) return 'Bilinmiyor';
+
+    let normalUpper = 24.9; // Varsayılan WHO üst sınırı
+    if (gender === 'Kadın') {
+      normalUpper = 24.0; 
+    } else if (gender === 'Erkek') {
+      normalUpper = 25.5; 
+    }
+    
     if (bmi < 18.5) return 'Zayıf';
-    if (bmi < 25) return 'Normal';
+    if (bmi <= normalUpper) return 'Normal'; 
     if (bmi < 30) return 'Fazla kilolu';
-    if (bmi < 35) return 'Obez';
+    if (bmi < 35) return 'Obez'; 
+    if (bmi < 40) return 'Obez'; 
     return 'Morbid obez';
   };
 
-  const currentWeight = weightHistory.length > 0 ? weightHistory[weightHistory.length - 1].weight : 0;
-  const currentBMI = calculateBMI(currentWeight, height);
-  const bmiCategory = getBMICategory(currentBMI);
+  const currentBMI = calculateBMI(lastWeight, height); // lastWeight kullanıldı
+  const bmiCategory = getBMICategory(currentBMI, gender); // gender parametresi eklendi
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tertiary"></div> {/* Spinner rengi */}
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-tertiary"></div> 
       </div>
     );
   }
@@ -107,11 +123,11 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineC
         <div className="flex items-center space-x-4">
           <div className="text-center">
             <p className="text-sm text-text-medium">Mevcut Kilo</p>
-            <p className="text-2xl font-bold text-tertiary">{currentWeight} kg</p> {/* Turuncu */}
+            <p className="text-2xl font-bold text-tertiary">{lastWeight} kg</p> {/* lastWeight kullanıldı */}
           </div>
           <div className="text-center">
             <p className="text-sm text-text-medium">Hedef</p>
-            <p className="text-2xl font-bold text-primary">{targetWeight} kg</p> {/* Yeşil */}
+            <p className="text-2xl font-bold text-primary">{targetWeight} kg</p> 
           </div>
         </div>
       </div>
@@ -122,7 +138,7 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineC
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-text-medium">Vücut Kitle İndeksi</p>
-              <p className="text-2xl font-bold text-secondary">{currentBMI.toFixed(1)}</p> {/* Sarı */}
+              <p className="text-2xl font-bold text-secondary">{currentBMI.toFixed(1)}</p> 
             </div>
             <div className="text-right">
               <p className="text-sm text-text-medium">Kategori</p>
@@ -169,7 +185,7 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineC
                 <Line 
                   type="monotone" 
                   dataKey="weight" 
-                  stroke={lineColor || COLORS.tertiary} // Prop veya varsayılan turuncu
+                  stroke={lineColor || COLORS.tertiary} 
                   strokeWidth={3}
                   dot={{ fill: lineColor || COLORS.tertiary, strokeWidth: 2, r: 6 }}
                   activeDot={{ r: 8, stroke: lineColor || COLORS.tertiary, strokeWidth: 2 }}
@@ -201,7 +217,6 @@ const WeightTrackingChart = ({ clientId, clientName, targetWeight, height, lineC
   );
 };
 
-// Kilo girişi formu komponenti
 const WeightEntryForm = ({ onAddWeight, currentWeek, targetWeight }) => {
   const [weight, setWeight] = useState('');
   const [week, setWeek] = useState(currentWeek);

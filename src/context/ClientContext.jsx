@@ -1,4 +1,4 @@
-// src/context/ClientContext.jsx
+// src/context/ClientContext.jsx - Onay İşlemleri Güncellenmiş Hali (AI Önerisi İsim Düzeltme)
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
@@ -26,7 +26,6 @@ export const ClientProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Danışanları fetch et
   useEffect(() => {
     const fetchClients = async () => {
       try {
@@ -58,7 +57,6 @@ export const ClientProvider = ({ children }) => {
     fetchClients();
   }, []);
 
-  // ✅ Yeni danışan ekle
   const addClient = async (newClient) => {
     try {
       const response = await fetch('http://localhost:3001/api/clients', {
@@ -87,38 +85,66 @@ export const ClientProvider = ({ children }) => {
     }
   };
 
-  // ✅ Onay işlemleri
   const handleApproval = async (clientId, approvalId, action) => {
     try {
       const client = clients.find(c => c.id === clientId);
       if (!client) return;
 
+      const approval = client.pendingApprovals.find(a => a.id === approvalId);
+      if (!approval) return;
+
       const updatedApprovals = client.pendingApprovals.filter(a => a.id !== approvalId);
+      let updatedWeeklyMenu = { ...client.weeklyMenu };
+
+      if (action === 'approve') {
+        const { day, mealIndex, suggestedAlternative, originalMeal } = approval; // originalMeal da alalım
+        if (updatedWeeklyMenu[day] && updatedWeeklyMenu[day][mealIndex] !== undefined) {
+          updatedWeeklyMenu[day][mealIndex] = {
+            ...suggestedAlternative, // Alternatif tarifin tüm özelliklerini al
+            id: `meal-${Date.now()}`, // Yeni bir ID ver
+            mealType: originalMeal.mealType, // Orijinal öğün tipini koru
+            items: suggestedAlternative.name || suggestedAlternative.items || 'AI Önerisi', // <-- BURAYI GÜNCELLEDİK!
+            calories: suggestedAlternative.calories || originalMeal.calories || 0, // Kalori bilgisini al
+            portion: suggestedAlternative.portion || originalMeal.portion || 'AI Tarafından Belirlendi', // Porsiyon bilgisi
+            status: 'pending', // Yeniden bekliyor durumuna getir
+            aiModified: true, // AI tarafından değiştirildiğini belirt
+          };
+        }
+      }
 
       const response = await fetch(`http://localhost:3001/api/clients/${clientId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pendingApprovals: updatedApprovals }),
+        body: JSON.stringify({
+          pendingApprovals: updatedApprovals,
+          weeklyMenu: updatedWeeklyMenu,
+        }),
       });
 
       if (!response.ok) throw new Error('Onay işlemi başarısız');
 
-      const updatedClient = await response.json();
+      const updatedClientData = await response.json();
 
       setClients(prev => prev.map(c =>
         c.id === clientId
-          ? { ...c, pendingApprovals: parseJsonSafe(updatedClient.pendingApprovals, []) }
+          ? {
+              ...c,
+              ...updatedClientData,
+              allergens: parseJsonSafe(updatedClientData.allergens, []),
+              weeklyProgress: parseJsonSafe(updatedClientData.weeklyProgress, []),
+              weeklyMenu: parseJsonSafe(updatedClientData.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
+              pendingApprovals: parseJsonSafe(updatedClientData.pendingApprovals, []),
+            }
           : c
       ));
 
       alert(action === 'approve' ? 'Onaylandı ✓' : 'Reddedildi ✗');
     } catch (error) {
       console.error('Hata:', error);
-      alert('İşlem başarısız oldu');
+      alert('İşlem başarısız oldu: ' + error.message);
     }
   };
 
-  // ✅ Danışan verilerini güncelle
   const updateClientData = async (clientId, updatedData) => {
     try {
       const response = await fetch(`http://localhost:3001/api/clients/${clientId}`, {

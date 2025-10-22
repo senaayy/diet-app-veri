@@ -1,4 +1,4 @@
-// backend/server.js - Cinsiyet Alanı ve Tüm Kilo Geçmişi Desteklenmiş Hali
+// backend/server.js - Danışan İsimle Arama Endpoint'i Düzeltildi
 
 import express from 'express';
 import cors from 'cors';
@@ -24,15 +24,15 @@ const calculateBMI = (weight, height) => {
   return weight / Math.pow(height / 100, 2);
 };
 
-// BMI kategorisi belirleme - Cinsiyet parametresi eklendi
-const getBMICategory = (bmi, gender) => { // gender parametresi eklendi
+// BMI kategorisi belirleme
+const getBMICategory = (bmi, gender) => { 
   if (!bmi) return 'Bilinmiyor';
 
-  let normalUpper = 24.9; // Varsayılan WHO üst sınırı
+  let normalUpper = 24.9; 
   if (gender === 'Kadın') {
-    normalUpper = 24.0; // Kadınlar için biraz daha düşük üst sınır
+    normalUpper = 24.0; 
   } else if (gender === 'Erkek') {
-    normalUpper = 25.5; // Erkekler için biraz daha yüksek üst sınır
+    normalUpper = 25.5; 
   }
   
   if (bmi < 18.5) return 'Zayıf';
@@ -50,19 +50,18 @@ app.get('/api/clients', async (req, res) => {
     const clients = await prisma.danisan.findMany({ 
       include: {
         weightEntries: {
-          orderBy: { week: 'asc' } // <-- take: 1 kaldırıldı, tüm kilo geçmişi gelsin
+          orderBy: { week: 'asc' } 
         }
       },
       orderBy: { createdAt: 'desc' } 
     });
     
-    // BMI bilgilerini ekle
     const clientsWithBMI = clients.map(client => {
       const bmi = calculateBMI(client.currentWeight, client.height);
       return {
         ...client,
         bmi: bmi ? Math.round(bmi * 10) / 10 : null,
-        bmiCategory: getBMICategory(bmi, client.gender) // gender parametresi eklendi
+        bmiCategory: getBMICategory(bmi, client.gender) 
       };
     });
     
@@ -73,7 +72,7 @@ app.get('/api/clients', async (req, res) => {
   }
 });
 
-// BMI kategorisine göre filtreleme (bu endpoint de tüm kilo geçmişini çekmeli)
+// BMI kategorisine göre filtreleme
 app.get('/api/clients/filter', async (req, res) => {
   try {
     const { category } = req.query;
@@ -81,19 +80,18 @@ app.get('/api/clients/filter', async (req, res) => {
     const clients = await prisma.danisan.findMany({ 
       include: {
         weightEntries: {
-          orderBy: { week: 'asc' } // <-- take: 1 kaldırıldı
+          orderBy: { week: 'asc' } 
         }
       },
       orderBy: { createdAt: 'desc' } 
     });
     
-    // BMI bilgilerini ekle ve filtrele
     const clientsWithBMI = clients.map(client => {
       const bmi = calculateBMI(client.currentWeight, client.height);
       return {
         ...client,
         bmi: bmi ? Math.round(bmi * 10) / 10 : null,
-        bmiCategory: getBMICategory(bmi, client.gender) // gender parametresi eklendi
+        bmiCategory: getBMICategory(bmi, client.gender) 
       };
     });
     
@@ -120,7 +118,8 @@ app.post('/api/clients', async (req, res) => {
   try {
     const newClient = await prisma.danisan.create({ 
       data: {
-        name: clientData.name,
+        // İsimi veritabanına kaydetmeden önce de normalize edelim
+        name: clientData.name.toLowerCase().replace(/\s+/g, ''), // <-- BURAYI GÜNCELLEDİK!
         gender: clientData.gender || 'Belirtilmedi', 
         height: clientData.height ? toFloat(clientData.height) : null,
         targetCalories: toInt(clientData.targetCalories),
@@ -262,7 +261,7 @@ app.get('/api/clients/:clientId/weight-history', async (req, res) => {
   try {
     const weightHistory = await prisma.weightEntry.findMany({
       where: { danisanId: parseInt(clientId) },
-      orderBy: { week: 'asc' } // <-- Tüm geçmişi week sırasına göre getir
+      orderBy: { week: 'asc' } 
     });
     
     res.json(weightHistory);
@@ -281,7 +280,7 @@ app.get('/api/clients/:clientId', async (req, res) => {
       where: { id: parseInt(clientId) },
       include: {
         weightEntries: {
-          orderBy: { week: 'asc' } // <-- Burada da tüm geçmişi getir
+          orderBy: { week: 'asc' } 
         }
       }
     });
@@ -294,7 +293,7 @@ app.get('/api/clients/:clientId', async (req, res) => {
     const clientWithBMI = {
       ...client,
       bmi: bmi ? Math.round(bmi * 10) / 10 : null,
-      bmiCategory: getBMICategory(bmi, client.gender) // gender parametresi eklendi
+      bmiCategory: getBMICategory(bmi, client.gender) 
     };
     
     res.json(clientWithBMI);
@@ -303,6 +302,44 @@ app.get('/api/clients/:clientId', async (req, res) => {
     res.status(500).json({ error: 'Danışan detayı getirilirken bir hata oluştu.' });
   }
 });
+
+// YENİ ENDPOINT: Danışan girişi için isimle danışan getir
+app.get('/api/clients/by-name/:name', async (req, res) => {
+  const { name } = req.params;
+  // URL'den gelen ismi normalize edelim
+  const normalizedNameFromUrl = name.toLowerCase().replace(/\s+/g, ''); // <-- BURAYI GÜNCELLEDİK!
+
+  try {
+    const client = await prisma.danisan.findFirst({
+      where: {
+        // Veritabanındaki adı, normalize edilmiş URL parametresi ile karşılaştır
+        name: normalizedNameFromUrl // <-- BURAYI GÜNCELLEDİK!
+      },
+      include: {
+        weightEntries: {
+          orderBy: { week: 'asc' }
+        }
+      }
+    });
+
+    if (!client) {
+      return res.status(404).json({ error: 'Danışan bulunamadı.' });
+    }
+
+    const bmi = calculateBMI(client.currentWeight, client.height);
+    const clientWithBMI = {
+      ...client,
+      bmi: bmi ? Math.round(bmi * 10) / 10 : null,
+      bmiCategory: getBMICategory(bmi, client.gender)
+    };
+
+    res.json(clientWithBMI);
+  } catch (error) {
+    console.error('Danışan isimle arama hatası:', error);
+    res.status(500).json({ error: 'Danışan aranırken bir hata oluştu.' });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`✅ Backend sunucusu http://localhost:${PORT} adresinde başarıyla başlatıldı.`);

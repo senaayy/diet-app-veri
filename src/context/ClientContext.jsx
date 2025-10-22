@@ -1,4 +1,4 @@
-// src/context/ClientContext.jsx - Onay İşlemleri Güncellenmiş Hali (AI Önerisi İsim Düzeltme)
+// src/context/ClientContext.jsx - Senkronizasyon için Güncellenmiş Hali
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
@@ -22,41 +22,48 @@ const parseJsonSafe = (data, defaultValue) => {
 };
 
 export const ClientProvider = ({ children }) => {
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState([]); // Diyetisyenin tüm danışanlarını tutar
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ✅ Tüm danışanları fetch et (Diyetisyen için)
+  // Bu fonksiyonu Diyetisyen'in ClientsList ve Dashboard'u kullanacak
+  const fetchAllClients = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:3001/api/clients');
+      if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
+
+      const data = await response.json();
+
+      const formattedData = data.map(client => ({
+        ...client,
+        allergens: parseJsonSafe(client.allergens, []),
+        weeklyProgress: parseJsonSafe(client.weeklyProgress, []),
+        weeklyMenu: parseJsonSafe(client.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
+        pendingApprovals: parseJsonSafe(client.pendingApprovals, []),
+        notifications: [],
+      }));
+
+      setClients(formattedData);
+      setError(null);
+    } catch (err) {
+      console.error("API'dan veri çekerken hata oluştu:", err);
+      setError("Danışan verileri yüklenemedi. Lütfen backend sunucunuzun çalıştığından emin olun.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // useEffect içinde tüm danışanları çekelim (Diyetisyen girişi için ideal)
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('http://localhost:3001/api/clients');
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
+    // Sadece diyetisyen rolündeyseniz veya genel bir liste gerekiyorsa çağırın
+    // Danışan girişi için ClientMenuView kendi fetchClientData'sını kullanacak.
+    // Şimdilik her zaman çekelim, sonra rol bazlı optimize edebiliriz.
+    fetchAllClients();
+  }, []); // Bağımlılıkları boş bıraktık, sayfa yüklendiğinde bir kez çeksin
 
-        const data = await response.json();
-
-        const formattedData = data.map(client => ({
-          ...client,
-          allergens: parseJsonSafe(client.allergens, []),
-          weeklyProgress: parseJsonSafe(client.weeklyProgress, []),
-          weeklyMenu: parseJsonSafe(client.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
-          pendingApprovals: parseJsonSafe(client.pendingApprovals, []),
-          notifications: [],
-        }));
-
-        setClients(formattedData);
-        setError(null);
-      } catch (err) {
-        console.error("API'dan veri çekerken hata oluştu:", err);
-        setError("Danışan verileri yüklenemedi. Lütfen backend sunucunuzun çalıştığından emin olun.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClients();
-  }, []);
-
+  // ✅ Yeni danışan ekle
   const addClient = async (newClient) => {
     try {
       const response = await fetch('http://localhost:3001/api/clients', {
@@ -79,12 +86,15 @@ export const ClientProvider = ({ children }) => {
       };
 
       setClients(prev => [formattedClient, ...prev]);
+      return formattedClient; // Yeni danışanı döndür
     } catch (err) {
       console.error(err);
       alert(err.message);
+      throw err;
     }
   };
 
+  // ✅ Onay işlemleri (Diyetisyen tarafından kullanılır)
   const handleApproval = async (clientId, approvalId, action) => {
     try {
       const client = clients.find(c => c.id === clientId);
@@ -97,17 +107,17 @@ export const ClientProvider = ({ children }) => {
       let updatedWeeklyMenu = { ...client.weeklyMenu };
 
       if (action === 'approve') {
-        const { day, mealIndex, suggestedAlternative, originalMeal } = approval; // originalMeal da alalım
+        const { day, mealIndex, suggestedAlternative, originalMeal } = approval; 
         if (updatedWeeklyMenu[day] && updatedWeeklyMenu[day][mealIndex] !== undefined) {
           updatedWeeklyMenu[day][mealIndex] = {
-            ...suggestedAlternative, // Alternatif tarifin tüm özelliklerini al
-            id: `meal-${Date.now()}`, // Yeni bir ID ver
-            mealType: originalMeal.mealType, // Orijinal öğün tipini koru
-            items: suggestedAlternative.name || suggestedAlternative.items || 'AI Önerisi', // <-- BURAYI GÜNCELLEDİK!
-            calories: suggestedAlternative.calories || originalMeal.calories || 0, // Kalori bilgisini al
-            portion: suggestedAlternative.portion || originalMeal.portion || 'AI Tarafından Belirlendi', // Porsiyon bilgisi
-            status: 'pending', // Yeniden bekliyor durumuna getir
-            aiModified: true, // AI tarafından değiştirildiğini belirt
+            ...suggestedAlternative, 
+            id: `meal-${Date.now()}`, 
+            mealType: originalMeal.mealType, 
+            items: suggestedAlternative.name || suggestedAlternative.items || 'AI Önerisi', 
+            calories: suggestedAlternative.calories || originalMeal.calories || 0, 
+            portion: suggestedAlternative.portion || originalMeal.portion || 'AI Tarafından Belirlendi', 
+            status: 'pending', 
+            aiModified: true, 
           };
         }
       }
@@ -117,19 +127,19 @@ export const ClientProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pendingApprovals: updatedApprovals,
-          weeklyMenu: updatedWeeklyMenu,
+          weeklyMenu: updatedWeeklyMenu, 
         }),
       });
 
       if (!response.ok) throw new Error('Onay işlemi başarısız');
 
-      const updatedClientData = await response.json();
+      const updatedClientData = await response.json(); 
 
       setClients(prev => prev.map(c =>
         c.id === clientId
           ? {
               ...c,
-              ...updatedClientData,
+              ...updatedClientData, 
               allergens: parseJsonSafe(updatedClientData.allergens, []),
               weeklyProgress: parseJsonSafe(updatedClientData.weeklyProgress, []),
               weeklyMenu: parseJsonSafe(updatedClientData.weeklyMenu, { monday: [], tuesday: [], wednesday: [] }),
@@ -139,12 +149,15 @@ export const ClientProvider = ({ children }) => {
       ));
 
       alert(action === 'approve' ? 'Onaylandı ✓' : 'Reddedildi ✗');
+      return updatedClientData; // Güncel danışan verisini döndür
     } catch (error) {
       console.error('Hata:', error);
       alert('İşlem başarısız oldu: ' + error.message);
+      throw error;
     }
   };
 
+  // ✅ Danışan verilerini güncelle (Hem diyetisyen hem de danışan tarafından kullanılabilir)
   const updateClientData = async (clientId, updatedData) => {
     try {
       const response = await fetch(`http://localhost:3001/api/clients/${clientId}`, {
@@ -157,7 +170,7 @@ export const ClientProvider = ({ children }) => {
 
       const savedClient = await response.json();
 
-      setClients(prevClients => prevClients.map(c =>
+      setClients(prevClients => prevClients.map(c => // Global clients listesini güncelle
         c.id === clientId
           ? {
               ...c,
@@ -169,20 +182,24 @@ export const ClientProvider = ({ children }) => {
             }
           : c
       ));
+
+      return savedClient; // Güncellenmiş danışan verisini döndür
     } catch (error) {
       console.error('Güncelleme hatası:', error);
       alert("Hata: " + error.message);
+      throw error;
     }
   };
 
   const value = {
     clients,
-    setClients,
+    setClients, // Eğer ClientsList'te direkt state güncelleme ihtiyacı olursa
     loading,
     error,
     addClient,
     handleApproval,
     updateClientData,
+    fetchAllClients, // Diyetisyen tarafında manuel refresh için eklendi
   };
 
   return (

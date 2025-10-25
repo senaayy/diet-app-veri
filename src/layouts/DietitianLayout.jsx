@@ -1,21 +1,26 @@
-// src/layouts/DietitianLayout.jsx - Hata Düzeltilmiş Hali
-
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Users, List, ClipboardCheck, LogOut } from 'lucide-react';
 import { useClients } from '../context/ClientContext';
 
-// ... (COLORS objesi aynı kalacak) ...
-
-function DietitianLayout({ onLogout }) { 
+function DietitianLayout({ onLogout }) {
   const { clients } = useClients();
   const pendingApprovalCount = clients.reduce((sum, c) => sum + (c.pendingApprovals?.length || 0), 0);
 
   return (
-    <div className="max-w-7xl mx-auto p-4"> 
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-text-dark mb-2">Diyetisyen Portalı</h1>
-        <p className="text-text-medium">Danışan Takip ve Analiz Merkezi</p>
+    <div className="max-w-7xl mx-auto p-4">
+      <div className="flex justify-center mb-8">
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="AdaptEat Logo"
+            className="h-40 w-25 object-contain flex-shrink-0"
+          />
+          <div className="flex flex-col">
+            <h1 className="text-4xl font-bold text-text-dark leading-none">AdaptEat</h1>
+            <p className="text-text-medium text-sm mt-1">Danışan Takip ve Analiz Merkezi</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex justify-center gap-4 mb-8 flex-wrap">
@@ -24,8 +29,8 @@ function DietitianLayout({ onLogout }) {
           className={({ isActive }) =>
             `px-8 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-sm ${
               isActive
-                ? 'bg-primary text-text-dark scale-105 shadow-md' 
-                : 'bg-background-white text-text-dark hover:bg-background-light' 
+                ? 'bg-primary text-text-dark scale-105 shadow-md'
+                : 'bg-background-white text-text-dark hover:bg-background-light'
             }`
           }
         >
@@ -43,7 +48,6 @@ function DietitianLayout({ onLogout }) {
         >
           <List size={20} /> Danışanlar
         </NavLink>
-        {/* HATA BURADAYDI, ŞİMDİ DÜZELTİLDİ */}
         <NavLink
           to="/dietitian/approvals"
           className={({ isActive }) =>
@@ -51,7 +55,7 @@ function DietitianLayout({ onLogout }) {
               isActive
                 ? 'bg-primary border-primary text-text-dark scale-105 shadow-md'
                 : 'bg-background-white text-text-dark hover:bg-background-light'
-            }` // className prop'u burada kapanıyor
+            }`
           }
         >
           <ClipboardCheck size={20} /> Onay Bekleyenler
@@ -62,9 +66,8 @@ function DietitianLayout({ onLogout }) {
           )}
         </NavLink>
 
-        {/* ... (Çıkış Yap butonu aynı kalacak) ... */}
-        <button 
-            onClick={onLogout} 
+        <button
+            onClick={onLogout}
             className="px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 bg-background-light text-text-dark hover:bg-divider shadow-sm"
         >
             <LogOut size={18} /> Çıkış Yap
@@ -72,7 +75,7 @@ function DietitianLayout({ onLogout }) {
       </nav>
 
       <main>
-        <Outlet /> 
+        <Outlet />
       </main>
     </div>
   );

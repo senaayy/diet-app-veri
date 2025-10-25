@@ -1,4 +1,4 @@
-// src/context/ClientContext.jsx - Düzeltilmiş Hali
+// src/context/ClientContext.jsx - Dinamik Uyum Oranı ile Düzeltilmiş Hali
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
@@ -80,7 +80,7 @@ export const ClientProvider = ({ children }) => {
         notifications: [],
       };
 
-      setClients(prev => [formattedClient, ...prev]);
+      setClients(prev => [...prev, formattedClient]);
       return formattedClient; 
     } catch (err) {
       console.error(err);
@@ -156,9 +156,29 @@ export const ClientProvider = ({ children }) => {
     }
   };
 
-  // ✅ DÜZELTME: Danışan verilerini güncelle - YENİ REFERANS OLUŞTUR
+  // ✅ DÜZELTME: Danışan verilerini güncelle - DİNAMİK UYUM ORANI
   const updateClientData = async (clientId, updatedData) => {
     try {
+      // ✅ Eğer weeklyMenu güncelleniyorsa, uyum oranını hesapla
+      if (updatedData.weeklyMenu) {
+        const weeklyMenu = updatedData.weeklyMenu;
+        let totalMeals = 0;
+        let completedMeals = 0;
+
+        Object.keys(weeklyMenu).forEach(day => {
+          if (Array.isArray(weeklyMenu[day])) {
+            totalMeals += weeklyMenu[day].length;
+            completedMeals += weeklyMenu[day].filter(meal => meal.status === 'completed').length;
+          }
+        });
+
+        // Uyum oranını hesapla ve güncellemeye ekle
+        const adherence = totalMeals > 0 ? Math.round((completedMeals / totalMeals) * 100) : 0;
+        updatedData.adherence = adherence;
+        updatedData.mealsLogged = completedMeals;
+        updatedData.totalMeals = totalMeals;
+      }
+
       const response = await fetch(`http://localhost:3001/api/clients/${clientId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
